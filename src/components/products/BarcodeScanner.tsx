@@ -32,18 +32,22 @@ export default function BarcodeScanner({ onScanSuccess, onClose, onManualInput }
       if (!isMounted) return;
       
       if (devices && devices.length) {
-        setCameras(devices.map(d => ({ id: d.id, label: d.label })));
+        const mappedDevices = devices.map(d => ({ id: d.id, label: d.label }));
+        setCameras(mappedDevices);
         
-        // [고도화] 후면 카메라(back/environment)를 찾아서 자동으로 선택
-        const backCamera = devices.find(d => 
+        // [개선] 후면 카메라 후보군 추출
+        const backCameraCandidates = mappedDevices.filter(d => 
             d.label.toLowerCase().includes('back') || 
             d.label.toLowerCase().includes('rear') ||
-            d.label.toLowerCase().includes('environment')
+            d.label.toLowerCase().includes('environment') ||
+            d.label.toLowerCase().includes('0') // 보통 0번이나 1번이 메인
         );
-        
-        if (backCamera) {
-            setSelectedCameraId(backCamera.id);
-        } else if (devices.length === 1) {
+
+        // 후면 카메라가 있다면 첫 번째(보통 메인)를 즉시 선택하여 시작
+        if (backCameraCandidates.length > 0) {
+            setSelectedCameraId(backCameraCandidates[0].id);
+        } else {
+            // 후면을 못 찾으면 첫 번째 카메라라도 일단 선택
             setSelectedCameraId(devices[0].id);
         }
       }
