@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useInventoryStore } from '@/store/useInventoryStore';
 import { useProductStore } from '@/store/useProductStore';
 import { StorageType, InventoryItem } from '@/types';
