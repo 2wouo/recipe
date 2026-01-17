@@ -49,36 +49,36 @@ export default function ProductsPage() {
       </div>
 
       {/* Add Form */}
-      <div className="rounded-sm border border-zinc-800 bg-zinc-900/50 p-5 md:p-6">
-        <h3 className="mb-5 text-sm font-bold text-zinc-300 flex items-center gap-2">
-            <Plus size={16} className="text-blue-500" />
-            새 품목 등록
+      <div className="rounded-sm border border-zinc-800 bg-zinc-900/50 p-6 md:p-8">
+        <h3 className="mb-6 text-sm font-black text-zinc-300 flex items-center gap-2 uppercase tracking-widest">
+            <Plus size={18} className="text-blue-500" />
+            새 식재료 품목 등록
         </h3>
-        <form onSubmit={handleAdd} className="flex flex-col gap-5 md:flex-row md:items-end">
-          <div className="flex-1 space-y-2">
-            <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider">품목명 (표준 이름)</label>
+        <form onSubmit={handleAdd} className="flex flex-col gap-6 md:flex-row md:items-end">
+          <div className="flex-1 space-y-2.5">
+            <label className="block text-[11px] font-black text-zinc-500 uppercase tracking-widest">품목명 (표준 이름)</label>
             <input
               autoFocus
-              className="w-full h-11 rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500 transition-colors"
-              placeholder="예: 두부"
+              className="w-full h-12 rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500 transition-all focus:ring-1 focus:ring-blue-500/20"
+              placeholder="예: 두부, 목살, 버터"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
             />
           </div>
-          <div className="flex-1 space-y-2">
-            <label className="block text-[11px] font-bold text-zinc-500 uppercase tracking-wider">카테고리</label>
+          <div className="flex-1 space-y-2.5">
+            <label className="block text-[11px] font-black text-zinc-500 uppercase tracking-widest">카테고리</label>
             <Autocomplete 
                 options={existingCategories}
                 value={newCategory}
                 onChange={setNewCategory}
-                placeholder="선택 또는 입력"
+                placeholder="선택 또는 직접 입력"
             />
           </div>
           <button
             type="submit"
-            className="h-11 rounded-sm bg-blue-600 px-8 text-sm font-bold text-white hover:bg-blue-700 active:scale-[0.98] transition-all shadow-lg shadow-blue-900/20"
+            className="h-12 md:w-40 rounded-sm bg-blue-600 px-8 text-sm font-black text-white hover:bg-blue-700 active:scale-[0.97] transition-all shadow-xl shadow-blue-900/30"
           >
-            품목 추가하기
+            등록하기
           </button>
         </form>
       </div>

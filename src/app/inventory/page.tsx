@@ -253,77 +253,80 @@ export default function InventoryPage() {
             )}
           </div>
           
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-6">
-              {/* Name Input with Quick Add */}
-              <div className="space-y-2 md:col-span-1">
-                <label className="flex items-center justify-between text-xs font-medium text-zinc-500">
-                    <span>표준 품목명</span>
-                    <button 
-                        type="button" 
-                        onClick={() => {
-                            setQuickAddName(formData.name);
-                            setIsQuickAddOpen(true);
-                        }}
-                        className="text-[10px] text-blue-500 hover:underline"
-                    >
-                        + 새 품목 등록
-                    </button>
-                </label>
-                <Autocomplete
-                  options={products.map(p => p.name)}
-                  placeholder="예: 우유"
-                  value={formData.name}
-                  onChange={(val) => setFormData({ ...formData, name: val })}
-                />
-              </div>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+            {/* 1. Product Name */}
+            <div className="space-y-2">
+              <label className="flex items-center justify-between text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                  <span>표준 품목명</span>
+                  <button 
+                      type="button" 
+                      onClick={() => {
+                          setQuickAddName(formData.name);
+                          setIsQuickAddOpen(true);
+                      }}
+                      className="text-[10px] text-blue-500 font-bold"
+                  >
+                      + 새 품목 등록
+                  </button>
+              </label>
+              <Autocomplete
+                options={products.map(p => p.name)}
+                placeholder="예: 우유, 양파..."
+                value={formData.name}
+                onChange={(val) => setFormData({ ...formData, name: val })}
+              />
+            </div>
 
-              {/* Detail Input */}
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-xs font-medium text-zinc-500">상세 제품명 / 메모</label>
+            {/* 2. Detail & Memo */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">상세 제품명 / 메모</label>
+              <input
+                className="h-12 w-full rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500"
+                placeholder="예: 서울우유 1L (1+1)"
+                value={formData.detail}
+                onChange={e => setFormData({ ...formData, detail: e.target.value })}
+              />
+            </div>
+
+            {/* 3. Quantity & Unit */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">수량</label>
                 <input
-                  className="h-10 w-full rounded-sm border border-zinc-800 bg-black px-3 text-sm outline-none focus:border-blue-500"
-                  placeholder="예: 서울우유 1L (1+1)"
-                  value={formData.detail}
-                  onChange={e => setFormData({ ...formData, detail: e.target.value })}
+                    type="number"
+                    min="0"
+                    className="h-12 w-full rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500"
+                    value={formData.quantityNum}
+                    onChange={e => setFormData({ ...formData, quantityNum: e.target.value })}
                 />
               </div>
-
-              {/* Quantity Input */}
-              <div className="space-y-2 md:col-span-1">
-                <label className="text-xs font-medium text-zinc-500">수량</label>
-                <div className="flex gap-2">
-                    <input
-                        type="number"
-                        min="0"
-                        className="h-10 w-16 rounded-sm border border-zinc-800 bg-black px-2 text-center text-sm outline-none focus:border-blue-500"
-                        value={formData.quantityNum}
-                        onChange={e => setFormData({ ...formData, quantityNum: e.target.value })}
-                    />
-                    <select
-                        className="h-10 flex-1 rounded-sm border border-zinc-800 bg-black px-2 text-sm outline-none focus:border-blue-500"
-                        value={formData.quantityUnit}
-                        onChange={e => setFormData({ ...formData, quantityUnit: e.target.value })}
-                    >
-                        <option value="개">개</option>
-                        <option value="팩">팩</option>
-                        <option value="봉">봉</option>
-                        <option value="Box">Box</option>
-                        <option value="kg">kg</option>
-                        <option value="g">g</option>
-                        <option value="L">L</option>
-                        <option value="ml">ml</option>
-                        <option value="캔">캔</option>
-                        <option value="병">병</option>
-                    </select>
-                </div>
-              </div>
-
-              {/* Storage Type */}
-              <div className="space-y-2 md:col-span-1">
-                <label className="text-xs font-medium text-zinc-500">보관 장소</label>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">단위</label>
                 <select
-                  className="h-10 w-full rounded-sm border border-zinc-800 bg-black px-3 text-sm outline-none focus:border-blue-500 appearance-none"
+                    className="h-12 w-full rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500"
+                    value={formData.quantityUnit}
+                    onChange={e => setFormData({ ...formData, quantityUnit: e.target.value })}
+                >
+                    <option value="개">개</option>
+                    <option value="팩">팩</option>
+                    <option value="봉">봉</option>
+                    <option value="Box">Box</option>
+                    <option value="kg">kg</option>
+                    <option value="g">g</option>
+                    <option value="L">L</option>
+                    <option value="ml">ml</option>
+                    <option value="캔">캔</option>
+                    <option value="병">병</option>
+                </select>
+              </div>
+            </div>
+
+            {/* 4. Storage & Expiry */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">보관 장소</label>
+                <select
+                  className="h-12 w-full rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500"
                   value={formData.storageType}
                   onChange={e => setFormData({ ...formData, storageType: e.target.value as StorageType })}
                 >
@@ -333,63 +336,60 @@ export default function InventoryPage() {
                 </select>
               </div>
 
-              {/* Expiry Date */}
-              <div className="space-y-2 md:col-span-1">
-                <label className="text-xs font-medium text-zinc-500">소비기한</label>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">소비기한</label>
                 <input
                   type="date"
-                  className="h-10 w-full rounded-sm border border-zinc-800 bg-black px-3 text-sm outline-none focus:border-blue-500"
+                  className="h-12 w-full rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500"
                   value={formData.expiryDate}
                   onChange={e => setFormData({ ...formData, expiryDate: e.target.value })}
                 />
               </div>
             </div>
             
-            <div className="space-y-4 pt-4 border-t border-zinc-800/50">
-                {/* Meta Info: Date & Barcode */}
-                <div className="grid grid-cols-2 gap-4 text-[11px]">
-                    <div className="space-y-1.5">
-                        <label className="text-zinc-500 font-medium">등록일</label>
+            <div className="space-y-6 pt-6 border-t border-zinc-800">
+                {/* Meta Info */}
+                <div className="flex items-center justify-between">
+                    <div className="space-y-1">
+                        <label className="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest">등록일</label>
                         <input
                             type="date"
-                            className="w-full bg-zinc-800/50 rounded-sm px-2 py-2 text-zinc-300 outline-none border border-zinc-700/50"
+                            className="bg-transparent text-xs text-zinc-400 outline-none focus:text-blue-500"
                             value={formData.registeredAt}
                             onChange={e => setFormData({ ...formData, registeredAt: e.target.value })}
                         />
                     </div>
-                    <div className="space-y-1.5 text-right">
-                        <label className="text-zinc-500 font-medium">바코드 정보</label>
-                        <div className="h-[34px] flex items-center justify-end gap-2 text-zinc-400">
-                            {formData.barcode ? (
-                                <div className="flex items-center gap-1.5 text-blue-500 bg-blue-500/10 px-2 py-1 rounded-sm border border-blue-500/20">
-                                    <Barcode size={12} />
-                                    <span className="font-mono">{formData.barcode.slice(-4)}...</span>
-                                    <button type="button" onClick={() => setFormData({...formData, barcode: ''})} className="hover:text-red-500"><X size={12}/></button>
-                                </div>
-                            ) : (
-                                <button type="button" onClick={() => setIsScannerOpen(true)} className="flex items-center gap-1.5 hover:text-blue-500 transition-colors">
-                                    <QrCode size={14} />
-                                    <span>재스캔</span>
-                                </button>
-                            )}
-                        </div>
+                    
+                    <div className="text-right">
+                        {formData.barcode ? (
+                            <div className="inline-flex items-center gap-2 text-blue-500 bg-blue-500/10 px-3 py-1.5 rounded-full border border-blue-500/20">
+                                <Barcode size={14} />
+                                <span className="text-[11px] font-mono font-bold">{formData.barcode}</span>
+                                <button type="button" onClick={() => setFormData({...formData, barcode: ''})} className="hover:text-red-500"><X size={14}/></button>
+                            </div>
+                        ) : (
+                            <button type="button" onClick={() => setIsScannerOpen(true)} className="flex items-center gap-2 text-zinc-500 hover:text-blue-500 transition-colors text-xs font-bold">
+                                <QrCode size={16} />
+                                <span>스캔 연결됨</span>
+                            </button>
+                        )}
                     </div>
                 </div>
 
-                {/* Main Action Buttons */}
-                <div className="flex gap-2 pt-2">
+                {/* Main Buttons */}
+                <div className="flex gap-3">
                     <button
                         type="button"
                         onClick={resetForm}
-                        className="flex-1 h-12 rounded-sm border border-zinc-700 bg-zinc-800 text-sm font-medium text-zinc-400 active:bg-zinc-700 transition-colors"
+                        className="flex-1 h-14 rounded-sm border border-zinc-800 bg-zinc-900 text-sm font-bold text-zinc-400 active:bg-zinc-800"
                     >
                         취소
                     </button>
                     <button
                         type="submit"
-                        className="flex-[2] h-12 rounded-sm bg-blue-600 text-sm font-bold text-white active:bg-blue-700 shadow-lg shadow-blue-900/20 transition-colors"
+                        className="flex-[2] h-14 rounded-sm bg-blue-600 text-sm font-black text-white active:bg-blue-700 shadow-xl shadow-blue-900/20"
                     >
-                        {editingItemId ? '수정 완료' : '식재료 등록'}
+                        {editingItemId ? '정보 수정' : '식재료 등록'}
                     </button>
                 </div>
             </div>
