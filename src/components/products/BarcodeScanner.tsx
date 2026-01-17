@@ -76,15 +76,15 @@ export default function BarcodeScanner({ onScanSuccess, onClose, onManualInput }
   }, [onScanSuccess, stopScanning]);
 
   useEffect(() => {
-    let isMounted = true;
-
+    // 스캔 시작 시 네비게이션 숨기기
+    document.body.classList.add('scanner-active');
+    
     const init = async () => {
       try {
         const devices = await Html5Qrcode.getCameras();
         if (!isMounted) return;
 
         if (devices && devices.length > 0) {
-          // 후면 카메라를 우선적으로 필터링 (이름에 front, selfie가 없는 것)
           const backCameras = devices.filter(d => 
             !d.label.toLowerCase().includes('front') && 
             !d.label.toLowerCase().includes('user') &&
@@ -93,8 +93,6 @@ export default function BarcodeScanner({ onScanSuccess, onClose, onManualInput }
 
           const sortedDevices = backCameras.length > 0 ? [...backCameras] : devices;
           setAvailableCameras(sortedDevices);
-          
-          // 메인 후면 카메라(보통 첫 번째) 선택
           startWithId(sortedDevices[0].id);
         }
       } catch (err) {
@@ -109,6 +107,8 @@ export default function BarcodeScanner({ onScanSuccess, onClose, onManualInput }
     return () => {
       isMounted = false;
       stopScanning();
+      // 스캔 종료 시 네비게이션 복구
+      document.body.classList.remove('scanner-active');
     };
   }, [startWithId, stopScanning]);
 
@@ -119,11 +119,11 @@ export default function BarcodeScanner({ onScanSuccess, onClose, onManualInput }
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md h-full md:h-auto md:aspect-[3/4] md:rounded-lg bg-zinc-900 shadow-2xl border border-zinc-800 flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black backdrop-blur-md animate-in fade-in duration-200 h-[100dvh]">
+      <div className="relative w-full max-w-md h-full md:h-auto md:aspect-[3/4] md:rounded-lg bg-zinc-900 shadow-2xl flex flex-col overflow-hidden">
         
         {/* Header */}
-        <div className="p-4 pt-10 md:pt-4 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 shrink-0">
+        <div className="p-4 pt-12 md:pt-4 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 shrink-0">
           <h3 className="font-bold text-white flex items-center gap-2 text-sm">
             <Camera className="text-blue-500" size={16} />
             바코드 스캔
@@ -153,7 +153,7 @@ export default function BarcodeScanner({ onScanSuccess, onClose, onManualInput }
             )}
 
             {/* Manual Input & Toggle */}
-            <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center gap-4 px-4 pb-12 md:pb-10 bg-gradient-to-t from-black/80 to-transparent pt-10">
+            <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center gap-4 px-4 pb-16 md:pb-10 bg-gradient-to-t from-black/90 to-transparent pt-12">
                 <div className="flex gap-2">
                     {availableCameras.length > 1 && (
                         <button 
@@ -166,7 +166,7 @@ export default function BarcodeScanner({ onScanSuccess, onClose, onManualInput }
                     )}
                     <button 
                         onClick={() => { stopScanning(); onManualInput?.(); }}
-                        className="flex items-center gap-2 bg-blue-600 px-6 py-3 rounded-full text-xs text-white shadow-xl font-bold"
+                        className="flex items-center gap-2 bg-blue-600 px-6 py-3 rounded-full text-xs text-white shadow-xl font-bold active:scale-95"
                     >
                         <Keyboard size={16} />
                         직접 입력

@@ -18,6 +18,10 @@
   animation: scan 2s linear infinite;
 }
 
+body.scanner-active .mobile-bottom-nav {
+  display: none !important;
+}
+
 :root {
   --background: #0a0a0a;
   --foreground: #ededed;
