@@ -345,45 +345,51 @@ export default function InventoryPage() {
               </div>
             </div>
             
-            <div className="flex items-center justify-between pt-2">
-                 <div className="flex items-center gap-4 text-xs text-zinc-500">
-                    <label className="flex items-center gap-2">
-                        <span>등록일:</span>
+            <div className="space-y-4 pt-4 border-t border-zinc-800/50">
+                {/* Meta Info: Date & Barcode */}
+                <div className="grid grid-cols-2 gap-4 text-[11px]">
+                    <div className="space-y-1.5">
+                        <label className="text-zinc-500 font-medium">등록일</label>
                         <input
                             type="date"
-                            className="bg-transparent border-b border-zinc-800 text-zinc-400 outline-none focus:border-blue-500"
+                            className="w-full bg-zinc-800/50 rounded-sm px-2 py-2 text-zinc-300 outline-none border border-zinc-700/50"
                             value={formData.registeredAt}
                             onChange={e => setFormData({ ...formData, registeredAt: e.target.value })}
                         />
-                    </label>
-                    
-                    {formData.barcode && (
-                        <div className="flex items-center gap-1 text-blue-500">
-                            <Barcode size={14} />
-                            <span>{formData.barcode}</span>
-                            <button type="button" onClick={() => setFormData({...formData, barcode: ''})} className="ml-1 hover:text-red-500"><X size={12}/></button>
+                    </div>
+                    <div className="space-y-1.5 text-right">
+                        <label className="text-zinc-500 font-medium">바코드 정보</label>
+                        <div className="h-[34px] flex items-center justify-end gap-2 text-zinc-400">
+                            {formData.barcode ? (
+                                <div className="flex items-center gap-1.5 text-blue-500 bg-blue-500/10 px-2 py-1 rounded-sm border border-blue-500/20">
+                                    <Barcode size={12} />
+                                    <span className="font-mono">{formData.barcode.slice(-4)}...</span>
+                                    <button type="button" onClick={() => setFormData({...formData, barcode: ''})} className="hover:text-red-500"><X size={12}/></button>
+                                </div>
+                            ) : (
+                                <button type="button" onClick={() => setIsScannerOpen(true)} className="flex items-center gap-1.5 hover:text-blue-500 transition-colors">
+                                    <QrCode size={14} />
+                                    <span>재스캔</span>
+                                </button>
+                            )}
                         </div>
-                    )}
-                    
-                    <button type="button" onClick={() => setIsScannerOpen(true)} className="flex items-center gap-2 text-zinc-400 hover:text-blue-500 hover:underline">
-                        <QrCode size={14} />
-                        다시 스캔
-                    </button>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                {/* Main Action Buttons */}
+                <div className="flex gap-2 pt-2">
                     <button
-                    type="button"
-                    onClick={resetForm}
-                    className="rounded-sm border border-zinc-800 bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-400 hover:text-white"
+                        type="button"
+                        onClick={resetForm}
+                        className="flex-1 h-12 rounded-sm border border-zinc-700 bg-zinc-800 text-sm font-medium text-zinc-400 active:bg-zinc-700 transition-colors"
                     >
-                    취소
+                        취소
                     </button>
                     <button
-                    type="submit"
-                    className="rounded-sm bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                        type="submit"
+                        className="flex-[2] h-12 rounded-sm bg-blue-600 text-sm font-bold text-white active:bg-blue-700 shadow-lg shadow-blue-900/20 transition-colors"
                     >
-                    {editingItemId ? '수정 완료' : '등록'}
+                        {editingItemId ? '수정 완료' : '식재료 등록'}
                     </button>
                 </div>
             </div>
