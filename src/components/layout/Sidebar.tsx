@@ -1,0 +1,56 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { LayoutDashboard, Refrigerator, BookOpen, Settings, List } from 'lucide-react';
+
+const menuItems = [
+  { name: '대시보드', href: '/', icon: LayoutDashboard },
+  { name: '재고 관리', href: '/inventory', icon: Refrigerator },
+  { name: '레시피 기록', href: '/recipes', icon: BookOpen },
+  { name: '식재료 마스터', href: '/products', icon: List }, // Added
+];
+
+export default function Sidebar() {
+  const pathname = usePathname();
+
+  return (
+    <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col border-r border-zinc-800 bg-zinc-950 p-6">
+      <div className="mb-10 flex items-center gap-2">
+        <div className="h-8 w-8 rounded-sm bg-blue-600 flex items-center justify-center">
+          <span className="text-white font-bold text-lg">K</span>
+        </div>
+        <h1 className="text-xl font-bold tracking-tight">Kitchen Log</h1>
+      </div>
+      
+      <nav className="space-y-1">
+        {menuItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.href;
+          
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-blue-600/10 text-blue-500'
+                  : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'
+              }`}
+            >
+              <Icon size={18} />
+              {item.name}
+            </Link>
+          );
+        })}
+      </nav>
+      
+      <div className="absolute bottom-6 left-6 right-6">
+        <button className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white">
+          <Settings size={18} />
+          설정
+        </button>
+      </div>
+    </aside>
+  );
+}

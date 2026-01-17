@@ -1,0 +1,478 @@
+'use client';
+
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useRecipeStore } from '@/store/useRecipeStore';
+import { useInventoryStore } from '@/store/useInventoryStore';
+import { useProductStore } from '@/store/useProductStore';
+import { RecipeVersion } from '@/types';
+import { Plus, Book, History, ChevronRight, Save, Trash2, Copy, CheckCircle2, Circle, Pencil, Star, StickyNote, Lightbulb, Check, AlertCircle, Refrigerator, Box, X, Search, ArrowLeft } from 'lucide-react';
+import { format } from 'date-fns';
+import QuickProductAddModal from '@/components/products/QuickProductAddModal';
+import Autocomplete from '@/components/ui/Autocomplete';
+
+function RecipesContent() {
+  const { recipes, addRecipe, addVersion, updateRecipe, updateVersion, setPrimaryVersion, deleteRecipe } = useRecipeStore();
+  const { items: inventoryItems } = useInventoryStore();
+  const { products } = useProductStore();
+  
+  const searchParams = useSearchParams();
+  const initialId = searchParams.get('id');
+
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
+  const [isAddingRecipe, setIsAddingRecipe] = useState(false);
+  const [isAddingVersion, setIsAddingVersion] = useState(false);
+  const [editingVersionIndex, setEditingVersionIndex] = useState<number | null>(null);
+  
+  // Title Editing State
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editingTitleText, setEditingTitleText] = useState('');
+
+  // Quick Add Modal State
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [quickAddName, setQuickAddName] = useState('');
+
+  const selectedRecipe = recipes.find(r => r.id === selectedRecipeId);
+
+  // Handle initial selection
+  useEffect(() => {
+    if (initialId && recipes.some(r => r.id === initialId)) {
+      setSelectedRecipeId(initialId);
+    }
+  }, [initialId, recipes]);
+
+  // Sync title text when recipe is selected
+  useEffect(() => {
+    if (selectedRecipe) {
+      setEditingTitleText(selectedRecipe.title);
+    }
+  }, [selectedRecipe]);
+
+  // New Recipe State
+  const [newRecipeTitle, setNewRecipeTitle] = useState('');
+  
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchScope, setSearchScope] = useState<'current' | 'all'>('current');
+
+  const filteredRecipes = recipes.filter(recipe => {
+    const query = searchQuery.toLowerCase();
+    
+    // 1. Title search (Always check title)
+    if (recipe.title.toLowerCase().includes(query)) return true;
+
+    // 2. Ingredient & Note search
+    if (searchScope === 'current') {
+      // Search only in Representative Version
+      const currentVer = recipe.versions.find(v => v.version === recipe.currentVersion);
+      if (currentVer) {
+        return currentVer.ingredients.some(ing => ing.name.toLowerCase().includes(query)) ||
+               currentVer.notes.toLowerCase().includes(query) || 
+               (currentVer.memo && currentVer.memo.toLowerCase().includes(query));
+      }
+    } else {
+      // Search in ALL versions
+      return recipe.versions.some(v => 
+        v.ingredients.some(ing => ing.name.toLowerCase().includes(query)) ||
+        v.notes.toLowerCase().includes(query) ||
+        (v.memo && v.memo.toLowerCase().includes(query))
+      );
+    }
+
+    return false;
+  });
+  
+  // New Version State
+  const [newVersion, setNewVersion] = useState<Omit<RecipeVersion, 'createdAt'>>({
+    version: '',
+    notes: '',
+    memo: '',
+    ingredients: [{ name: '', amount: '' }],
+    steps: ['']
+  });
+
+  useEffect(() => {
+    if (isAddingVersion && editingVersionIndex === null && selectedRecipe && selectedRecipe.versions.length > 0) {
+      const latest = selectedRecipe.versions[selectedRecipe.versions.length - 1];
+      const nextVersionNum = (parseFloat(latest.version) + 0.1).toFixed(1);
+      setNewVersion({
+        version: nextVersionNum,
+        notes: '',
+        memo: latest.memo || '',
+        ingredients: [...latest.ingredients], 
+        steps: [...latest.steps]
+      });
+    }
+  }, [isAddingVersion, editingVersionIndex, selectedRecipe]);
+
+  const handleCreateRecipe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRecipeTitle) return;
+    const id = crypto.randomUUID();
+    addRecipe({
+      id,
+      title: newRecipeTitle,
+      description: '',
+      currentVersion: '1.0',
+      versions: [{
+        version: '1.0',
+        ingredients: [{ name: '', amount: '' }],
+        steps: [''],
+        notes: '최초 작성',
+        memo: '',
+        createdAt: new Date().toISOString()
+      }]
+    });
+    setNewRecipeTitle('');
+    setIsAddingRecipe(false);
+    setSelectedRecipeId(id);
+  };
+
+  const handleDeleteRecipe = () => {
+    if (!selectedRecipeId) return;
+    if (confirm('정말로 이 레시피를 삭제하시겠습니까? 모든 버전 기록이 사라집니다.')) {
+      deleteRecipe(selectedRecipeId);
+      setSelectedRecipeId(null);
+    }
+  };
+
+  const handleSaveTitle = () => {
+    if (selectedRecipeId && editingTitleText.trim()) {
+      updateRecipe(selectedRecipeId, { title: editingTitleText });
+      setIsEditingTitle(false);
+    }
+  };
+
+  const handleSaveVersion = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedRecipeId || !newVersion.version) return;
+    const cleanedIngredients = newVersion.ingredients.filter(i => i.name.trim() !== '');
+    const cleanedSteps = newVersion.steps.filter(s => s.trim() !== '');
+    const versionData: RecipeVersion = {
+      ...newVersion,
+      ingredients: cleanedIngredients,
+      steps: cleanedSteps,
+      createdAt: editingVersionIndex !== null ? selectedRecipe!.versions[editingVersionIndex].createdAt : new Date().toISOString()
+    };
+    if (editingVersionIndex !== null) {
+      updateVersion(selectedRecipeId, editingVersionIndex, versionData);
+    } else {
+      addVersion(selectedRecipeId, versionData);
+    }
+    setIsAddingVersion(false);
+    setEditingVersionIndex(null);
+  };
+
+  const handleEditVersion = (index: number) => {
+    if (!selectedRecipe) return;
+    const versionToEdit = selectedRecipe.versions[index];
+    setNewVersion({
+      version: versionToEdit.version,
+      notes: versionToEdit.notes,
+      memo: versionToEdit.memo || '',
+      ingredients: [...versionToEdit.ingredients],
+      steps: [...versionToEdit.steps]
+    });
+    setEditingVersionIndex(index);
+    setIsAddingVersion(true);
+  };
+
+  const updateIngredient = (index: number, field: 'name' | 'amount', value: string) => {
+    const updated = [...newVersion.ingredients];
+    updated[index] = { ...updated[index], [field]: value };
+    setNewVersion({ ...newVersion, ingredients: updated });
+  };
+
+  const addIngredientRow = () => {
+    setNewVersion({ ...newVersion, ingredients: [...newVersion.ingredients, { name: '', amount: '' }] });
+  };
+
+  const removeIngredientRow = (index: number) => {
+    setNewVersion({ ...newVersion, ingredients: newVersion.ingredients.filter((_, i) => i !== index) });
+  };
+
+  const updateStep = (index: number, value: string) => {
+    const updated = [...newVersion.steps];
+    updated[index] = value;
+    setNewVersion({ ...newVersion, steps: updated });
+  };
+
+  const addStepRow = () => {
+    setNewVersion({ ...newVersion, steps: [...newVersion.steps, ''] });
+  };
+
+  const removeStepRow = (index: number) => {
+    setNewVersion({ ...newVersion, steps: newVersion.steps.filter((_, i) => i !== index) });
+  };
+
+  const checkStock = (ingredientName: string) => {
+    return inventoryItems.find(item => item.name.trim().toLowerCase() === ingredientName.trim().toLowerCase());
+  };
+
+  const getStorageIcon = (type: string) => {
+    if (type === 'FRIDGE') return <Refrigerator size={10} />;
+    if (type === 'FREEZER') return <Refrigerator size={10} className="text-blue-300" />;
+    return <Box size={10} />;
+  };
+
+  const sortedVersions = (() => {
+    if (!selectedRecipe) return [];
+    const versions = [...selectedRecipe.versions];
+    const primaryIndex = versions.findIndex(v => v.version === selectedRecipe.currentVersion);
+    let primaryVersion: RecipeVersion | null = null;
+    let otherVersions: RecipeVersion[] = [];
+    if (primaryIndex !== -1) {
+      primaryVersion = versions[primaryIndex];
+      otherVersions = versions.filter((_, idx) => idx !== primaryIndex);
+    } else {
+        otherVersions = versions;
+    }
+    otherVersions.reverse();
+    return primaryVersion ? [primaryVersion, ...otherVersions] : otherVersions;
+  })();
+
+  return (
+    <div className="flex flex-col md:grid md:h-[calc(100vh-8rem)] md:grid-cols-12 md:gap-8">
+      {/* Left: Recipe List */}
+      <div className={`flex-col space-y-4 md:col-span-4 md:flex md:border-r md:border-zinc-800 md:pr-8 ${selectedRecipe ? 'hidden' : 'flex'}`}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">내 레시피</h2>
+          <button onClick={() => setIsAddingRecipe(true)} className="rounded-sm bg-blue-600 p-1.5 text-white hover:bg-blue-700">
+            <Plus size={18} />
+          </button>
+        </div>
+        
+        {/* Search Input */}
+        <div className="space-y-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-2.5 text-zinc-500" size={16} />
+            <input 
+              className="w-full rounded-sm border border-zinc-800 bg-zinc-900 px-3 py-2 pl-9 text-sm outline-none focus:border-blue-500" 
+              placeholder="레시피명, 재료, 메모 검색..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-1 p-1 bg-zinc-900/50 rounded-sm border border-zinc-800">
+            <button 
+              onClick={() => setSearchScope('current')}
+              className={`flex-1 rounded-sm py-1 text-xs font-medium transition-colors ${searchScope === 'current' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
+            >
+              대표 버전
+            </button>
+            <button 
+              onClick={() => setSearchScope('all')}
+              className={`flex-1 rounded-sm py-1 text-xs font-medium transition-colors ${searchScope === 'all' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
+            >
+              전체 버전
+            </button>
+          </div>
+        </div>
+
+        {isAddingRecipe && (
+          <form onSubmit={handleCreateRecipe} className="space-y-3 rounded-sm border border-zinc-800 bg-zinc-900 p-4">
+            <input autoFocus className="w-full rounded-sm border border-zinc-800 bg-black px-3 py-2 text-sm outline-none focus:border-blue-500" placeholder="요리 이름..." value={newRecipeTitle} onChange={e => setNewRecipeTitle(e.target.value)} />
+            <div className="flex gap-2">
+              <button type="submit" className="flex-1 rounded-sm bg-blue-600 py-1.5 text-xs font-bold">생성</button>
+              <button type="button" onClick={() => setIsAddingRecipe(false)} className="flex-1 rounded-sm bg-zinc-800 py-1.5 text-xs">취소</button>
+            </div>
+          </form>
+        )}
+        <div className="flex-1 space-y-2 overflow-y-auto pr-2">
+          {filteredRecipes.length > 0 ? (
+            filteredRecipes.map((recipe) => {
+              // Calculate matched versions for display
+              const query = searchQuery.toLowerCase();
+              let matchedVersions: string[] = [];
+              
+              if (query) {
+                if (searchScope === 'current') {
+                  const currentVer = recipe.versions.find(v => v.version === recipe.currentVersion);
+                  if (currentVer && (
+                    currentVer.ingredients.some(ing => ing.name.toLowerCase().includes(query)) ||
+                    currentVer.notes.toLowerCase().includes(query) || 
+                    (currentVer.memo && currentVer.memo.toLowerCase().includes(query))
+                  )) {
+                    matchedVersions = [currentVer.version];
+                  }
+                } else {
+                  matchedVersions = recipe.versions.filter(v => 
+                    v.ingredients.some(ing => ing.name.toLowerCase().includes(query)) ||
+                    v.notes.toLowerCase().includes(query) ||
+                    (v.memo && v.memo.toLowerCase().includes(query))
+                  ).map(v => v.version);
+                }
+              }
+
+              return (
+                <button key={recipe.id} onClick={() => { setSelectedRecipeId(recipe.id); setIsAddingVersion(false); }} className={`flex w-full flex-col gap-2 rounded-sm border p-4 transition-all ${selectedRecipeId === recipe.id ? 'border-blue-500 bg-blue-500/10' : 'border-zinc-800 bg-zinc-900/30 hover:bg-zinc-900/60'}`}>
+                  <div className="flex w-full items-center justify-between">
+                    <h4 className="font-bold">{recipe.title}</h4>
+                    <ChevronRight size={16} className={`transition-transform ${selectedRecipeId === recipe.id ? 'text-blue-500 translate-x-1' : 'text-zinc-600'}`} />
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Always show current version */}
+                    <span className="flex items-center gap-1 rounded-sm bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">
+                      <Star size={8} className="fill-zinc-400" />
+                      v{recipe.currentVersion}
+                    </span>
+
+                    {/* Show matched versions if searching */}
+                    {searchQuery && matchedVersions.length > 0 && (
+                      <>
+                        <span className="text-[10px] text-zinc-600">|</span>
+                        <div className="flex flex-wrap gap-1">
+                          {matchedVersions.map(ver => (
+                            <span key={ver} className="rounded-sm bg-blue-900/40 border border-blue-500/30 px-1.5 py-0.5 text-[10px] text-blue-300 font-medium">
+                              v{ver} 검색됨
+                            </span>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </button>
+              );
+            })
+          ) : (
+            <div className="py-10 text-center text-sm text-zinc-500">
+              검색 결과가 없습니다.
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Right: Recipe Detail */}
+      <div className={`flex-1 md:col-span-8 md:overflow-y-auto md:pr-4 ${!selectedRecipe ? 'hidden md:flex' : 'block'}`}>
+        {selectedRecipe ? (
+          <div className="space-y-8 pb-20">
+            {/* Header with Title Editing and Delete */}
+            <div className="flex flex-col border-b border-zinc-800 pb-6 md:flex-row md:items-end md:justify-between">
+              <div className="flex-1 md:mr-4">
+                {/* Mobile Back Button */}
+                <button 
+                  onClick={() => setSelectedRecipeId(null)}
+                  className="mb-6 flex items-center gap-2 text-zinc-500 hover:text-white md:hidden"
+                >
+                  <ArrowLeft size={20} />
+                  <span className="text-sm font-medium">레시피 목록</span>
+                </button>
+
+                {isEditingTitle ? (
+                  <form onSubmit={(e) => { e.preventDefault(); handleSaveTitle(); }} className="flex items-center gap-2">
+                    <input 
+                      autoFocus
+                      className="text-2xl font-bold bg-black border-b border-blue-500 outline-none w-full md:text-3xl"
+                      value={editingTitleText}
+                      onChange={(e) => setEditingTitleText(e.target.value)}
+                    />
+                    <button type="submit" className="p-1 text-blue-500 hover:bg-blue-500/10 rounded"><Check size={24} /></button>
+                    <button type="button" onClick={() => setIsEditingTitle(false)} className="p-1 text-zinc-500 hover:bg-zinc-800 rounded"><X size={24} /></button>
+                  </form>
+                ) : (
+                  <div className="flex items-start gap-2 group">
+                    <h1 className="text-3xl font-bold tracking-tight md:text-4xl break-all">{selectedRecipe.title}</h1>
+                    <button onClick={() => setIsEditingTitle(true)} className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-blue-500">
+                      <Pencil size={18} />
+                    </button>
+                  </div>
+                )}
+                <p className="mt-2 text-sm text-zinc-400">현재 <span className="font-bold text-white">v{selectedRecipe.currentVersion}</span>이 대표 레시피입니다.</p>
+              </div>
+              
+              <div className="mt-6 flex flex-wrap gap-2 md:mt-0">
+                {!isAddingVersion && (
+                  <button onClick={handleDeleteRecipe} className="flex flex-1 items-center justify-center gap-2 rounded-sm border border-red-900/50 px-3 py-2.5 text-xs font-medium text-red-500 hover:bg-red-900/20 md:flex-none">
+                    <Trash2 size={14} />
+                    레시피 삭제
+                  </button>
+                )}
+                <button onClick={() => { setIsAddingVersion(!isAddingVersion); setEditingVersionIndex(null); }} className={`flex flex-[2] items-center justify-center gap-2 rounded-sm border px-4 py-2.5 text-xs font-medium transition-colors md:flex-none ${isAddingVersion ? 'border-zinc-700 bg-zinc-800 text-zinc-300' : 'border-blue-500 bg-blue-600 text-white hover:bg-blue-700'}`}>{isAddingVersion ? '기록 취소' : <><History size={14} />새 버전 기록</>}</button>
+              </div>
+            </div>
+
+            {isAddingVersion ? (
+              <form onSubmit={handleSaveVersion} className="space-y-6 rounded-sm border border-blue-500/30 bg-blue-900/10 p-4 md:p-6">
+                <h3 className="text-lg font-bold text-blue-400">{editingVersionIndex !== null ? '버전 수정' : '새 버전 기록'}</h3>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2"><label className="text-xs font-medium text-zinc-400">버전</label><input className="w-full rounded-sm border border-zinc-700 bg-black px-3 py-2 text-sm outline-none focus:border-blue-500" value={newVersion.version} onChange={e => setNewVersion({...newVersion, version: e.target.value})} /></div>
+                  <div className="space-y-2"><label className="text-xs font-medium text-zinc-400">변경 사항</label><input className="w-full rounded-sm border border-zinc-700 bg-black px-3 py-2 text-sm outline-none focus:border-blue-500" value={newVersion.notes} onChange={e => setNewVersion({...newVersion, notes: e.target.value})} /></div>
+                </div>
+                <div className="space-y-2"><label className="text-xs font-medium text-zinc-400">메모</label><textarea className="w-full h-20 resize-none rounded-sm border border-zinc-700 bg-black px-3 py-2 text-sm outline-none focus:border-blue-500" value={newVersion.memo} onChange={e => setNewVersion({...newVersion, memo: e.target.value})} /></div>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between"><label className="text-xs font-medium text-zinc-400">재료</label><button type="button" onClick={() => setIsQuickAddOpen(true)} className="text-[10px] text-blue-500">+ 새 재료 등록</button></div>
+                  
+                  <div className="space-y-2">
+                    {newVersion.ingredients.map((ing, idx) => (
+                      <div key={idx} className="flex gap-2 items-start">
+                         <div className="flex-[2]">
+                            <Autocomplete 
+                              options={products.map(p => p.name)}
+                              value={ing.name}
+                              onChange={(val) => updateIngredient(idx, 'name', val)}
+                              placeholder="재료명"
+                            />
+                         </div>
+                         <input placeholder="수량" value={ing.amount} onChange={e => updateIngredient(idx, 'amount', e.target.value)} className="flex-1 rounded-sm border border-zinc-700 bg-black px-3 py-2 text-sm outline-none focus:border-blue-500" />
+                         <button type="button" onClick={() => removeIngredientRow(idx)} className="mt-2 text-zinc-500 hover:text-red-500"><Trash2 size={16} /></button>
+                      </div>
+                    ))}
+                  </div>
+                  <button type="button" onClick={addIngredientRow} className="text-xs text-blue-500">+ 재료 추가</button>
+                </div>
+                <div className="space-y-3"><label className="text-xs font-medium text-zinc-400">조리 순서</label><div className="space-y-2">{newVersion.steps.map((step, idx) => (<div key={idx} className="flex gap-2"><span className="text-xs text-zinc-600">{idx+1}</span><textarea rows={2} className="flex-1 rounded-sm border border-zinc-700 bg-black px-3 py-2 text-sm outline-none focus:border-blue-500" value={step} onChange={e => updateStep(idx, e.target.value)} /><button type="button" onClick={() => removeStepRow(idx)} className="text-zinc-500 hover:text-red-500"><Trash2 size={16} /></button></div>))}</div><button type="button" onClick={addStepRow} className="text-xs text-blue-500">+ 단계 추가</button></div>
+                <button type="submit" className="w-full rounded-sm bg-blue-600 py-3 text-sm font-bold">저장</button>
+              </form>
+            ) : (
+              <div className="space-y-8">
+                {sortedVersions.map((v) => {
+                  const isPrimary = v.version === selectedRecipe.currentVersion;
+                  const originalIndex = selectedRecipe.versions.findIndex(orig => orig.version === v.version);
+                  return (
+                    <div key={v.version} className={`relative rounded-sm border bg-zinc-900/30 group ${isPrimary ? 'border-pink-500/50 ring-1 ring-pink-500/20' : 'border-zinc-800'}`}>
+                      <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 p-4">
+                        <div className="flex items-center gap-3"><span className={`rounded-sm px-2 py-0.5 text-sm font-bold ${isPrimary ? 'bg-pink-600 text-white' : 'bg-zinc-800 text-zinc-400'}`}>v{v.version}</span><span className="text-[10px] text-zinc-500">{format(new Date(v.createdAt), 'MM.dd HH:mm')}</span></div>
+                        <div className="flex items-center gap-4">
+                          {isPrimary && <span className="flex items-center gap-1 rounded-full bg-pink-500/10 px-2 py-0.5 text-[10px] font-bold text-pink-500"><Star size={10} className="fill-pink-500" />대표</span>}
+                          
+                          <div className="flex items-center gap-2">
+                            {!isPrimary && <button onClick={() => setPrimaryVersion(selectedRecipe.id, v.version)} className="text-[10px] text-zinc-500 hover:text-pink-500">대표 설정</button>}
+                            <button onClick={() => handleEditVersion(originalIndex)} className="text-zinc-400 hover:text-blue-500" title="버전 수정"><Pencil size={14} /></button>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-4 md:p-6">
+                        <div className="mb-6 grid gap-4 md:grid-cols-2">
+                          {v.notes && <div className={`rounded-sm p-3 text-sm border-l-2 bg-zinc-800/50 ${isPrimary ? 'text-pink-100 border-pink-500' : 'text-zinc-300 border-zinc-600'}`}><span className="block text-xs font-bold opacity-50 mb-1">Change Log</span>{v.notes}</div>}
+                          {v.memo && <div className="rounded-sm p-3 text-sm border border-zinc-700 bg-zinc-900/50 text-zinc-300"><span className="flex items-center gap-1 mb-1 text-xs font-bold text-yellow-500/80"><Lightbulb size={12} />Memo & Tips</span>{v.memo}</div>}
+                        </div>
+                        <div className="grid gap-8 md:grid-cols-2">
+                          <div><h5 className="mb-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">재료</h5><ul className="space-y-2">{v.ingredients.map((ing, i) => { const stock = checkStock(ing.name); return (
+                            <li key={i} className="flex items-center justify-between border-b border-zinc-800/50 pb-1.5 text-sm"><div className="flex items-center gap-2"><span>{ing.name}</span>{stock && <span className="flex items-center gap-1 rounded-full bg-green-500/10 px-1.5 py-0.5 text-[10px] text-green-500"><Check size={10} />{getStorageIcon(stock.storageType)}</span>}</div><span className="opacity-50">{ing.amount}</span></li>
+                          );})}</ul></div>
+                          <div><h5 className="mb-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">조리 순서</h5><div className="space-y-4">{v.steps.map((step, i) => (<div key={i} className="flex gap-3"><div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${isPrimary ? 'bg-pink-600 text-white' : 'bg-zinc-800 text-zinc-400'}`}>{i+1}</div><p className="text-sm leading-relaxed">{step}</p></div>))}</div></div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center text-zinc-500"><Book size={48} className="mb-4 opacity-10" /><p>레시피를 선택하세요.</p></div>
+        )}
+      </div>
+      <QuickProductAddModal isOpen={isQuickAddOpen} onClose={() => setIsQuickAddOpen(false)} initialName={quickAddName} />
+    </div>
+  );
+}
+
+export default function RecipesPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-zinc-500">로딩 중...</div>}>
+      <RecipesContent />
+    </Suspense>
+  );
+}
