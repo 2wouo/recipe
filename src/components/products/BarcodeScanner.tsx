@@ -119,11 +119,11 @@ export default function BarcodeScanner({ onScanSuccess, onClose, onManualInput }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-md h-full md:h-auto md:aspect-[3/4] md:rounded-lg bg-zinc-900 shadow-2xl border border-zinc-800 flex flex-col overflow-hidden">
         
         {/* Header */}
-        <div className="p-4 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 shrink-0">
+        <div className="p-4 pt-10 md:pt-4 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 shrink-0">
           <h3 className="font-bold text-white flex items-center gap-2 text-sm">
             <Camera className="text-blue-500" size={16} />
             바코드 스캔
@@ -153,7 +153,7 @@ export default function BarcodeScanner({ onScanSuccess, onClose, onManualInput }
             )}
 
             {/* Manual Input & Toggle */}
-            <div className="absolute bottom-10 left-0 right-0 flex flex-col items-center gap-4 px-4">
+            <div className="absolute bottom-0 left-0 right-0 flex flex-col items-center gap-4 px-4 pb-12 md:pb-10 bg-gradient-to-t from-black/80 to-transparent pt-10">
                 <div className="flex gap-2">
                     {availableCameras.length > 1 && (
                         <button 
