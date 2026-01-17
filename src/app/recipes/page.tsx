@@ -243,7 +243,7 @@ function RecipesContent() {
       {/* Left: Recipe List */}
       <div className={`flex-col space-y-4 md:col-span-4 md:flex md:border-r md:border-zinc-800 md:pr-8 ${selectedRecipe ? 'hidden' : 'flex'}`}>
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">내 레시피</h2>
+          <h2 className="text-xl font-bold">내 레시피</h2>
           <button onClick={() => setIsAddingRecipe(true)} className="rounded-sm bg-blue-600 p-1.5 text-white hover:bg-blue-700">
             <Plus size={18} />
           </button>

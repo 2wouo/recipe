@@ -44,7 +44,7 @@ export default function ProductsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">표준 식재료 관리</h2>
+        <h2 className="text-xl font-bold tracking-tight">표준 식재료 관리</h2>
         <p className="text-zinc-400">재고와 레시피에서 공통으로 사용할 품목 이름을 미리 등록하세요.</p>
       </div>
 

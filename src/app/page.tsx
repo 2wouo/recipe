@@ -69,7 +69,7 @@ export default function Home() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">대시보드</h2>
+        <h2 className="text-xl font-bold tracking-tight">대시보드</h2>
         <p className="text-zinc-400">주방의 현황을 한눈에 확인하세요.</p>
       </div>
 

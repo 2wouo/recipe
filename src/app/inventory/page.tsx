@@ -197,7 +197,7 @@ export default function InventoryPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">식재료 관리</h2>
+          <h2 className="text-xl font-bold tracking-tight">식재료 관리</h2>
           <p className="text-zinc-400">냉장고와 펜트리의 재고를 관리하세요.</p>
         </div>
         <div className="flex w-full gap-2 md:w-auto">
