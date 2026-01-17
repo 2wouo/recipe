@@ -111,18 +111,26 @@ export default function InventoryPage() {
     resetForm();
   };
 
-  // 외부 API(Open Food Facts)에서 상품 정보 조회
+  // 외부 API들에서 상품 정보 조회 (멀티 소스)
   const fetchProductFromExternal = async (barcode: string): Promise<string | null> => {
+    // 1. Open Food Facts (글로벌/한국 식품 특화)
     try {
       const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
       const data = await response.json();
       if (data.status === 1 && data.product) {
-        // 한국어 이름이 있으면 우선 사용, 없으면 영어 이름 사용
-        return data.product.product_name_ko || data.product.product_name || null;
+        return data.product.product_name_ko || data.product.product_name || data.product.brands || null;
       }
-    } catch (error) {
-      console.error("External API fetch failed", error);
-    }
+    } catch (e) {}
+
+    // 2. UPCItemDB (공산품/글로벌 특화 폴백)
+    try {
+      const response = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`);
+      const data = await response.json();
+      if (data.items && data.items.length > 0) {
+        return data.items[0].title;
+      }
+    } catch (e) {}
+
     return null;
   };
 
@@ -140,6 +148,17 @@ export default function InventoryPage() {
             detail: externalName,
             barcode: decodedText
         }));
+
+        // [지능형 학습] 외부에서 찾은 제품을 내 '식재료 마스터'에도 자동 등록 (없을 경우에만)
+        const existsInMaster = products.some(p => p.name === externalName || p.barcodes?.includes(decodedText));
+        if (!existsInMaster) {
+            addProduct({
+                id: crypto.randomUUID(),
+                name: externalName,
+                category: '기타', // 나중에 사용자가 수정 가능
+                barcodes: [decodedText]
+            });
+        }
     } else {
         // 2. 외부 DB에 없을 때만 내 DB 검색
         const matchedProduct = products.find(p => p.barcodes?.includes(decodedText));
@@ -157,7 +176,7 @@ export default function InventoryPage() {
                 ...prev,
                 barcode: decodedText
             }));
-            alert(`등록되지 않은 바코드입니다 (${decodedText}).\n제품명을 입력해주시면 다음부터 기억하겠습니다!`);
+            alert(`외부 데이터베이스에도 없는 제품입니다 (${decodedText}).\n제품명을 직접 입력해 주시면 다음부터는 자동으로 인식합니다!`);
         }
     }
     
