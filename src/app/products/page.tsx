@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useProductStore } from '@/store/useProductStore';
 import { Plus, Trash2, Tag } from 'lucide-react';
 
@@ -12,9 +12,13 @@ const DEFAULT_CATEGORIES = [
 ];
 
 export default function ProductsPage() {
-  const { products, addProduct, deleteProduct } = useProductStore();
+  const { products, addProduct, deleteProduct, fetchProducts } = useProductStore();
   const [newName, setNewName] = useState('');
   const [newCategory, setNewCategory] = useState('');
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   // Collect all unique categories from existing products + defaults
   const existingCategories = Array.from(new Set([

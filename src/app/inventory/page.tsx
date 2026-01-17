@@ -12,9 +12,15 @@ import { searchBarcode } from '@/utils/mockBarcodeDb';
 import Autocomplete from '@/components/ui/Autocomplete';
 
 export default function InventoryPage() {
-  const { items, addItem, updateItem, deleteItem } = useInventoryStore();
-  const { products } = useProductStore();
+  const { items, addItem, updateItem, deleteItem, fetchItems } = useInventoryStore();
+  const { products, fetchProducts } = useProductStore();
   const [activeTab, setActiveTab] = useState<StorageType>('FRIDGE');
+
+  // Load data on mount
+  useEffect(() => {
+    fetchItems();
+    fetchProducts();
+  }, [fetchItems, fetchProducts]);
   
   // UI States
   const [isFormOpen, setIsFormOpen] = useState(false);

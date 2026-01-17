@@ -1,96 +1,170 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 import { Recipe, RecipeVersion } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 interface RecipeState {
   recipes: Recipe[];
-  addRecipe: (recipe: Recipe) => void;
-  updateRecipe: (id: string, recipe: Partial<Recipe>) => void;
-  addVersion: (recipeId: string, version: RecipeVersion) => void;
-  updateVersion: (recipeId: string, versionIndex: number, updatedVersion: RecipeVersion) => void;
-  setPrimaryVersion: (recipeId: string, version: string) => void;
-  deleteRecipe: (id: string) => void;
+  fetchRecipes: () => Promise<void>;
+  addRecipe: (recipe: Recipe) => Promise<void>;
+  updateRecipe: (id: string, recipe: Partial<Recipe>) => Promise<void>;
+  addVersion: (recipeId: string, version: RecipeVersion) => Promise<void>;
+  updateVersion: (recipeId: string, versionIndex: number, updatedVersion: RecipeVersion) => Promise<void>;
+  setPrimaryVersion: (recipeId: string, version: string) => Promise<void>;
+  deleteRecipe: (id: string) => Promise<void>;
 }
 
-const initialData: Recipe[] = [
-  {
-    id: '1',
-    title: '알리오 올리오',
-    description: '마늘 향 가득한 파스타',
-    currentVersion: '1.2',
-    versions: [
-      {
-        version: '1.0',
-        ingredients: [],
-        steps: [],
-        notes: '마늘 5알 사용, 약간 싱거움',
-        createdAt: '2024-01-10T10:00:00Z'
-      },
-      {
-        version: '1.2',
-        ingredients: [],
-        steps: [],
-        notes: '마늘 8알로 증량, 페페론치노 추가로 매콤함 강화',
-        createdAt: '2024-01-15T18:30:00Z'
-      }
-    ]
-  }
-];
+export const useRecipeStore = create<RecipeState>((set, get) => ({
+  recipes: [],
 
-export const useRecipeStore = create<RecipeState>()(
-  persist(
-    (set) => ({
-      recipes: initialData,
-      addRecipe: (recipe) => set((state) => ({ recipes: [...state.recipes, recipe] })),
-      updateRecipe: (id, updatedRecipe) =>
-        set((state) => ({
-          recipes: state.recipes.map((recipe) =>
-            recipe.id === id ? { ...recipe, ...updatedRecipe } : recipe
-          ),
-        })),
-      addVersion: (recipeId, version) =>
-        set((state) => ({
-          recipes: state.recipes.map((recipe) =>
-            recipe.id === recipeId
-              ? {
-                  ...recipe,
-                  currentVersion: version.version,
-                  versions: [...recipe.versions, version],
-                }
-              : recipe
-          ),
-        })),
-      updateVersion: (recipeId, versionIndex, updatedVersion) =>
-        set((state) => ({
-          recipes: state.recipes.map((recipe) => {
-            if (recipe.id !== recipeId) return recipe;
-            
-            const newVersions = [...recipe.versions];
-            newVersions[versionIndex] = updatedVersion;
-            
-            // If we edited the last version, update currentVersion display too
-            const isLatest = versionIndex === recipe.versions.length - 1;
-            
-            return {
-              ...recipe,
-              currentVersion: isLatest ? updatedVersion.version : recipe.currentVersion,
-              versions: newVersions,
-            };
-          }),
-        })),
-      setPrimaryVersion: (recipeId, version) =>
-        set((state) => ({
-          recipes: state.recipes.map((recipe) =>
-            recipe.id === recipeId ? { ...recipe, currentVersion: version } : recipe
-          ),
-        })),
-      deleteRecipe: (id) =>
-        set((state) => ({
-          recipes: state.recipes.filter((recipe) => recipe.id !== id),
-        })),
-    }),
-    {
-      name: 'recipe-storage',
+  fetchRecipes: async () => {
+    const { data, error } = await supabase
+      .from('recipes')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching recipes:', error);
+      return;
     }
-  )
-);
+
+    const mappedRecipes: Recipe[] = data.map((row: any) => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      currentVersion: row.current_version,
+      versions: row.versions || [], // JSONB data directly maps to array
+    }));
+
+    set({ recipes: mappedRecipes });
+  },
+
+  addRecipe: async (recipe) => {
+    const { error } = await supabase.from('recipes').insert({
+      id: recipe.id,
+      title: recipe.title,
+      description: recipe.description,
+      current_version: recipe.currentVersion,
+      versions: recipe.versions,
+    });
+
+    if (error) {
+      console.error('Error adding recipe:', error);
+      return;
+    }
+
+    set((state) => ({ recipes: [...state.recipes, recipe] }));
+  },
+
+  updateRecipe: async (id, updatedRecipe) => {
+    const updates: any = {};
+    if (updatedRecipe.title) updates.title = updatedRecipe.title;
+    if (updatedRecipe.description !== undefined) updates.description = updatedRecipe.description;
+    
+    // versions나 currentVersion 업데이트는 별도 함수로 처리 권장하지만, 여기서도 가능
+    if (updatedRecipe.currentVersion) updates.current_version = updatedRecipe.currentVersion;
+    if (updatedRecipe.versions) updates.versions = updatedRecipe.versions;
+
+    const { error } = await supabase.from('recipes').update(updates).eq('id', id);
+
+    if (error) {
+       console.error('Error updating recipe:', error);
+       return;
+    }
+
+    set((state) => ({
+      recipes: state.recipes.map((recipe) =>
+        recipe.id === id ? { ...recipe, ...updatedRecipe } : recipe
+      ),
+    }));
+  },
+
+  addVersion: async (recipeId, version) => {
+    const recipe = get().recipes.find(r => r.id === recipeId);
+    if (!recipe) return;
+
+    const updatedVersions = [...recipe.versions, version];
+    
+    const { error } = await supabase.from('recipes').update({
+        versions: updatedVersions,
+        current_version: version.version // 새 버전 추가 시 자동으로 대표 버전 변경? (기존 로직 따름)
+    }).eq('id', recipeId);
+
+    if (error) {
+        console.error('Error adding version:', error);
+        return;
+    }
+
+    set((state) => ({
+      recipes: state.recipes.map((r) =>
+        r.id === recipeId
+          ? {
+              ...r,
+              currentVersion: version.version,
+              versions: updatedVersions,
+            }
+          : r
+      ),
+    }));
+  },
+
+  updateVersion: async (recipeId, versionIndex, updatedVersion) => {
+    const recipe = get().recipes.find(r => r.id === recipeId);
+    if (!recipe) return;
+
+    const newVersions = [...recipe.versions];
+    newVersions[versionIndex] = updatedVersion;
+    
+    // If we edited the last version, update currentVersion display too
+    const isLatest = versionIndex === recipe.versions.length - 1;
+    const newCurrentVersion = isLatest ? updatedVersion.version : recipe.currentVersion;
+
+    const { error } = await supabase.from('recipes').update({
+        versions: newVersions,
+        current_version: newCurrentVersion
+    }).eq('id', recipeId);
+
+    if (error) {
+        console.error('Error updating version:', error);
+        return;
+    }
+
+    set((state) => ({
+      recipes: state.recipes.map((r) => {
+        if (r.id !== recipeId) return r;
+        return {
+          ...r,
+          currentVersion: newCurrentVersion,
+          versions: newVersions,
+        };
+      }),
+    }));
+  },
+
+  setPrimaryVersion: async (recipeId, version) => {
+    const { error } = await supabase.from('recipes').update({
+        current_version: version
+    }).eq('id', recipeId);
+
+    if (error) {
+        console.error('Error setting primary version:', error);
+        return;
+    }
+
+    set((state) => ({
+      recipes: state.recipes.map((recipe) =>
+        recipe.id === recipeId ? { ...recipe, currentVersion: version } : recipe
+      ),
+    }));
+  },
+
+  deleteRecipe: async (id) => {
+    const { error } = await supabase.from('recipes').delete().eq('id', id);
+    if (error) {
+        console.error('Error deleting recipe:', error);
+        return;
+    }
+    set((state) => ({
+      recipes: state.recipes.filter((recipe) => recipe.id !== id),
+    }));
+  },
+}));

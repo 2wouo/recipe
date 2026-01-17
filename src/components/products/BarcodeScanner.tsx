@@ -71,6 +71,7 @@ export default function BarcodeScanner({ onScanSuccess, onClose, onManualInput }
     }
 
     const html5QrCode = new Html5Qrcode(readerId, {
+        verbose: false,
         experimentalFeatures: {
             useBarCodeDetectorIfSupported: true // 하드웨어 가속 사용 (매우 중요)
         }

@@ -12,10 +12,17 @@ import QuickProductAddModal from '@/components/products/QuickProductAddModal';
 import Autocomplete from '@/components/ui/Autocomplete';
 
 function RecipesContent() {
-  const { recipes, addRecipe, addVersion, updateRecipe, updateVersion, setPrimaryVersion, deleteRecipe } = useRecipeStore();
-  const { items: inventoryItems } = useInventoryStore();
-  const { products } = useProductStore();
+  const { recipes, addRecipe, addVersion, updateRecipe, updateVersion, setPrimaryVersion, deleteRecipe, fetchRecipes } = useRecipeStore();
+  const { items: inventoryItems, fetchItems } = useInventoryStore();
+  const { products, fetchProducts } = useProductStore();
   
+  // Load data on mount
+  useEffect(() => {
+    fetchRecipes();
+    fetchItems(); // For stock checking
+    fetchProducts(); // For autocomplete
+  }, [fetchRecipes, fetchItems, fetchProducts]);
+
   const searchParams = useSearchParams();
   const initialId = searchParams.get('id');
 

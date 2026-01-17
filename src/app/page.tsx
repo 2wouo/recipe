@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useInventoryStore } from '@/store/useInventoryStore';
 import { useRecipeStore } from '@/store/useRecipeStore';
 import { Refrigerator, BookOpen, AlertCircle, Clock, ChefHat, ArrowRight } from 'lucide-react';
@@ -7,8 +8,13 @@ import { differenceInDays, parseISO } from 'date-fns';
 import Link from 'next/link';
 
 export default function Home() {
-  const { items } = useInventoryStore();
-  const { recipes } = useRecipeStore();
+  const { items, fetchItems } = useInventoryStore();
+  const { recipes, fetchRecipes } = useRecipeStore();
+
+  useEffect(() => {
+    fetchItems();
+    fetchRecipes();
+  }, [fetchItems, fetchRecipes]);
 
   const today = new Date();
 
