@@ -30,46 +30,24 @@ export default function BarcodeScanner({ onScanSuccess, onClose, onManualInput }
 
     Html5Qrcode.getCameras().then(devices => {
       if (!isMounted) return;
-      
       if (devices && devices.length) {
-        const mappedDevices = devices.map(d => ({ id: d.id, label: d.label }));
-        setCameras(mappedDevices);
-        
-        // [개선] 후면 카메라 후보군 추출
-        const backCameraCandidates = mappedDevices.filter(d => 
-            d.label.toLowerCase().includes('back') || 
-            d.label.toLowerCase().includes('rear') ||
-            d.label.toLowerCase().includes('environment') ||
-            d.label.toLowerCase().includes('0') // 보통 0번이나 1번이 메인
-        );
-
-        // 후면 카메라가 있다면 첫 번째(보통 메인)를 즉시 선택하여 시작
-        if (backCameraCandidates.length > 0) {
-            setSelectedCameraId(backCameraCandidates[0].id);
-        } else {
-            // 후면을 못 찾으면 첫 번째 카메라라도 일단 선택
-            setSelectedCameraId(devices[0].id);
-        }
+        setCameras(devices.map(d => ({ id: d.id, label: d.label })));
       }
     }).catch(err => {
       console.error("Camera access error:", err);
       setPermissionError(true);
     });
 
+    // 시작하자마자 후면 카메라 시도
+    startScanning({ facingMode: "environment" });
+
     return () => {
       isMounted = false;
     };
   }, []);
 
-  // 2. 카메라 선택 시 스캔 시작
-  useEffect(() => {
-    if (selectedCameraId && !isScanning) {
-        startScanning(selectedCameraId);
-    }
-  }, [selectedCameraId]);
-
-  // 스캔 시작 함수
-  const startScanning = async (cameraId: string) => {
+  // 스캔 시작 함수 (ID 또는 제약조건 수용)
+  const startScanning = async (cameraConfig: string | MediaTrackConstraints) => {
     if (scannerRef.current) {
         await stopScanning();
     }
@@ -77,18 +55,17 @@ export default function BarcodeScanner({ onScanSuccess, onClose, onManualInput }
     const html5QrCode = new Html5Qrcode(readerId, {
         verbose: false,
         experimentalFeatures: {
-            useBarCodeDetectorIfSupported: true // 하드웨어 가속 사용 (매우 중요)
+            useBarCodeDetectorIfSupported: true
         }
     });
     scannerRef.current = html5QrCode;
 
     try {
         await html5QrCode.start(
-            cameraId, 
+            cameraConfig, 
             {
                 fps: 20,
                 qrbox: (viewfinderWidth, viewfinderHeight) => {
-                    // 화면 크기에 맞게 인식 영역을 유동적으로 크게 설정
                     const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
                     const size = Math.floor(minEdge * 0.7);
                     return { width: size, height: Math.floor(size * 0.6) };
@@ -103,9 +80,17 @@ export default function BarcodeScanner({ onScanSuccess, onClose, onManualInput }
             (errorMessage) => {}
         );
         setIsScanning(true);
+        // 특정 ID로 성공했다면 선택 상태 업데이트
+        if (typeof cameraConfig === 'string') {
+            setSelectedCameraId(cameraConfig);
+        }
     } catch (err) {
         console.error("Failed to start scanner", err);
         setIsScanning(false);
+        // 후면 카메라 시도 실패 시(예: PC) 첫 번째 카메라로 폴백
+        if (typeof cameraConfig !== 'string' && cameras.length > 0) {
+            startScanning(cameras[0].id);
+        }
     }
   };
 
