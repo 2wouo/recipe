@@ -50,5 +50,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     );
   }
 
+  // 비로그인 상태에서 로그인 페이지가 아닌 곳에 접근하려 할 때, 아무것도 렌더링하지 않고 리다이렉트 대기
+  if (!user && pathname !== '/login') {
+    return null;
+  }
+
   return <>{children}</>;
 }
