@@ -19,8 +19,13 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: null, loading: false });
   },
   checkUser: async () => {
-    set({ loading: true });
-    const { data: { user } } = await supabase.auth.getUser();
-    set({ user, loading: false });
+    try {
+      set({ loading: true });
+      const { data: { user } } = await supabase.auth.getUser();
+      set({ user, loading: false });
+    } catch (error) {
+      console.error('Check user error:', error);
+      set({ user: null, loading: false });
+    }
   },
 }));

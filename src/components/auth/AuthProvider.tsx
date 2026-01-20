@@ -42,17 +42,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     }
   }, [user, loading, pathname, router]);
 
-  if (loading) {
+  if (loading && pathname !== '/login') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
       </div>
     );
-  }
-
-  // If not logged in and not on login page, don't show anything (redirecting)
-  if (!user && pathname !== '/login') {
-    return null;
   }
 
   return <>{children}</>;
