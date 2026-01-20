@@ -40,6 +40,9 @@ export const useInventoryStore = create<InventoryState>((set) => ({
   },
 
   addItem: async (item) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     // 1. DB에 저장
     const { error } = await supabase.from('inventory').insert({
       id: item.id,
@@ -49,7 +52,8 @@ export const useInventoryStore = create<InventoryState>((set) => ({
       quantity: item.quantity,
       expiry_date: item.expiryDate,
       registered_at: item.registeredAt,
-      barcode: item.barcode
+      barcode: item.barcode,
+      user_id: user.id
     });
 
     if (error) {

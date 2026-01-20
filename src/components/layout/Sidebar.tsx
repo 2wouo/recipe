@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Refrigerator, BookOpen, Settings, List } from 'lucide-react';
+import { LayoutDashboard, Refrigerator, BookOpen, Settings, List, LogOut } from 'lucide-react';
+import { useAuthStore } from '@/store/useAuthStore';
 
 const menuItems = [
   { name: '대시보드', href: '/', icon: LayoutDashboard },
@@ -13,6 +14,7 @@ const menuItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { signOut, user } = useAuthStore();
 
   return (
     <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col border-r border-zinc-800 bg-zinc-950 p-6">
@@ -23,7 +25,7 @@ export default function Sidebar() {
         <h1 className="text-xl font-bold tracking-tight">Kitchen Log</h1>
       </div>
       
-      <nav className="space-y-1">
+      <nav className="flex-1 space-y-1">
         {menuItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
@@ -45,10 +47,21 @@ export default function Sidebar() {
         })}
       </nav>
       
-      <div className="absolute bottom-6 left-6 right-6">
+      <div className="space-y-1 border-t border-zinc-800 pt-6">
+        <div className="px-3 py-2 mb-2">
+          <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Account</p>
+          <p className="text-xs text-zinc-300 truncate font-medium mt-1">{user?.email}</p>
+        </div>
         <button className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white">
           <Settings size={18} />
           설정
+        </button>
+        <button 
+          onClick={() => signOut()}
+          className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium text-red-500/70 transition-colors hover:bg-red-500/10 hover:text-red-500"
+        >
+          <LogOut size={18} />
+          로그아웃
         </button>
       </div>
     </aside>
