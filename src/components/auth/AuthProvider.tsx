@@ -11,11 +11,18 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   const pathname = usePathname();
 
   useEffect(() => {
-    // Initial check
-    checkUser();
+    const initAuth = async () => {
+      try {
+        await checkUser();
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+      }
+    };
 
-    // Listen for changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    initAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth event:', event);
       setUser(session?.user ?? null);
     });
 
@@ -23,11 +30,14 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   }, [checkUser, setUser]);
 
   useEffect(() => {
+    console.log('Auth Status - User:', !!user, 'Loading:', loading, 'Path:', pathname);
     if (!loading) {
       if (!user && pathname !== '/login') {
-        router.push('/login');
+        console.log('Redirecting to /login');
+        router.replace('/login');
       } else if (user && pathname === '/login') {
-        router.push('/');
+        console.log('Redirecting to /');
+        router.replace('/');
       }
     }
   }, [user, loading, pathname, router]);
