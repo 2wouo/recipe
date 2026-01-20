@@ -7,6 +7,7 @@ import { Refrigerator, BookOpen, AlertCircle, Clock, ChefHat, ArrowRight } from 
 import { differenceInDays, parseISO } from 'date-fns';
 import Link from 'next/link';
 
+// Dashboard for Smart Kitchen Log
 export default function Home() {
   const { items, fetchItems } = useInventoryStore();
   const { recipes, fetchRecipes } = useRecipeStore();
