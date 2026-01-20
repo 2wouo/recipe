@@ -26,34 +26,23 @@ function RecipesContent() {
   const searchParams = useSearchParams();
   const initialId = searchParams.get('id');
 
-  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(null);
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(initialId);
   const [isAddingRecipe, setIsAddingRecipe] = useState(false);
   const [isAddingVersion, setIsAddingVersion] = useState(false);
   const [editingVersionIndex, setEditingVersionIndex] = useState<number | null>(null);
   
+  const selectedRecipe = recipes.find(r => r.id === selectedRecipeId);
+
   // Title Editing State
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editingTitleText, setEditingTitleText] = useState('');
 
-  // Quick Add Modal State
-  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
-  const [quickAddName, setQuickAddName] = useState('');
-
-  const selectedRecipe = recipes.find(r => r.id === selectedRecipeId);
-
-  // Handle initial selection
-  useEffect(() => {
-    if (initialId && recipes.some(r => r.id === initialId)) {
-      setSelectedRecipeId(initialId);
-    }
-  }, [initialId, recipes]);
-
-  // Sync title text when recipe is selected
-  useEffect(() => {
+  const handleStartEditTitle = () => {
     if (selectedRecipe) {
       setEditingTitleText(selectedRecipe.title);
+      setIsEditingTitle(true);
     }
-  }, [selectedRecipe]);
+  };
 
   // New Recipe State
   const [newRecipeTitle, setNewRecipeTitle] = useState('');
@@ -98,8 +87,8 @@ function RecipesContent() {
     steps: ['']
   });
 
-  useEffect(() => {
-    if (isAddingVersion && editingVersionIndex === null && selectedRecipe && selectedRecipe.versions.length > 0) {
+  const handleOpenAddVersion = () => {
+    if (selectedRecipe && selectedRecipe.versions.length > 0) {
       const latest = selectedRecipe.versions[selectedRecipe.versions.length - 1];
       const nextVersionNum = (parseFloat(latest.version) + 0.1).toFixed(1);
       setNewVersion({
@@ -109,8 +98,18 @@ function RecipesContent() {
         ingredients: [...latest.ingredients], 
         steps: [...latest.steps]
       });
+    } else {
+      setNewVersion({
+        version: '1.0',
+        notes: '',
+        memo: '',
+        ingredients: [{ name: '', amount: '' }],
+        steps: ['']
+      });
     }
-  }, [isAddingVersion, editingVersionIndex, selectedRecipe]);
+    setIsAddingVersion(true);
+    setEditingVersionIndex(null);
+  };
 
   const handleCreateRecipe = (e: React.FormEvent) => {
     e.preventDefault();
@@ -380,7 +379,7 @@ function RecipesContent() {
                 ) : (
                   <div className="flex items-start gap-2 group">
                     <h1 className="text-3xl font-bold tracking-tight md:text-4xl break-all">{selectedRecipe.title}</h1>
-                    <button onClick={() => setIsEditingTitle(true)} className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-blue-500">
+                    <button onClick={handleStartEditTitle} className="mt-1 opacity-0 group-hover:opacity-100 transition-opacity text-zinc-500 hover:text-blue-500">
                       <Pencil size={18} />
                     </button>
                   </div>
@@ -395,7 +394,7 @@ function RecipesContent() {
                     레시피 삭제
                   </button>
                 )}
-                <button onClick={() => { setIsAddingVersion(!isAddingVersion); setEditingVersionIndex(null); }} className={`flex flex-[2] items-center justify-center gap-2 rounded-sm border px-4 py-2.5 text-xs font-medium transition-colors md:flex-none ${isAddingVersion ? 'border-zinc-700 bg-zinc-800 text-zinc-300' : 'border-blue-500 bg-blue-600 text-white hover:bg-blue-700'}`}>{isAddingVersion ? '기록 취소' : <><History size={14} />새 버전 기록</>}</button>
+                <button onClick={handleOpenAddVersion} className={`flex flex-[2] items-center justify-center gap-2 rounded-sm border px-4 py-2.5 text-xs font-medium transition-colors md:flex-none ${isAddingVersion ? 'border-zinc-700 bg-zinc-800 text-zinc-300' : 'border-blue-500 bg-blue-600 text-white hover:bg-blue-700'}`}>{isAddingVersion ? '기록 취소' : <><History size={14} />새 버전 기록</>}</button>
               </div>
             </div>
 

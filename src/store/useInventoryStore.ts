@@ -25,15 +25,15 @@ export const useInventoryStore = create<InventoryState>((set) => ({
     }
 
     // DB의 snake_case 컬럼명을 앱의 camelCase로 변환
-    const mappedItems: InventoryItem[] = data.map((row: any) => ({
-      id: row.id,
-      name: row.name,
-      detail: row.detail,
-      storageType: row.storage_type,
-      quantity: row.quantity,
-      expiryDate: row.expiry_date,
-      registeredAt: row.registered_at,
-      barcode: row.barcode
+    const mappedItems: InventoryItem[] = (data || []).map((row: Record<string, string | null>) => ({
+      id: row.id as string,
+      name: row.name as string,
+      detail: row.detail as string | undefined,
+      storageType: row.storage_type as "FRIDGE" | "FREEZER" | "PANTRY",
+      quantity: row.quantity as string,
+      expiryDate: row.expiry_date as string,
+      registeredAt: row.registered_at as string,
+      barcode: row.barcode as string | undefined
     }));
 
     set({ items: mappedItems });
@@ -68,7 +68,7 @@ export const useInventoryStore = create<InventoryState>((set) => ({
 
   updateItem: async (id, updatedItem) => {
     // 업데이트할 필드만 추출하여 snake_case로 변환
-    const updates: any = {};
+    const updates: Record<string, string | null> = {};
     if (updatedItem.name) updates.name = updatedItem.name;
     if (updatedItem.detail !== undefined) updates.detail = updatedItem.detail;
     if (updatedItem.storageType) updates.storage_type = updatedItem.storageType;

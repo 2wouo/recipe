@@ -10,14 +10,20 @@ interface BarcodeScannerProps {
   onManualInput?: () => void;
 }
 
+interface CameraDevice {
+  id: string;
+  label: string;
+}
+
 export default function BarcodeScanner({ onScanSuccess, onClose, onManualInput }: BarcodeScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [permissionError, setPermissionError] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [cameraIndex, setCameraIndex] = useState(0);
-  const [availableCameras, setAvailableCameras] = useState<any[]>([]);
+  const [availableCameras, setAvailableCameras] = useState<CameraDevice[]>([]);
   
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const isMountedRef = useRef(true);
   const readerId = "reader-v3-pro";
 
   const stopScanning = useCallback(async () => {
@@ -76,13 +82,14 @@ export default function BarcodeScanner({ onScanSuccess, onClose, onManualInput }
   }, [onScanSuccess, stopScanning]);
 
   useEffect(() => {
+    isMountedRef.current = true;
     // 스캔 시작 시 네비게이션 숨기기
     document.body.classList.add('scanner-active');
     
     const init = async () => {
       try {
         const devices = await Html5Qrcode.getCameras();
-        if (!isMounted) return;
+        if (!isMountedRef.current) return;
 
         if (devices && devices.length > 0) {
           const backCameras = devices.filter(d => 
@@ -105,7 +112,7 @@ export default function BarcodeScanner({ onScanSuccess, onClose, onManualInput }
     init();
 
     return () => {
-      isMounted = false;
+      isMountedRef.current = false;
       stopScanning();
       // 스캔 종료 시 네비게이션 복구
       document.body.classList.remove('scanner-active');
@@ -126,7 +133,7 @@ export default function BarcodeScanner({ onScanSuccess, onClose, onManualInput }
         <div className="p-4 pt-12 md:pt-4 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 shrink-0">
           <h3 className="font-bold text-white flex items-center gap-2 text-sm">
             <Camera className="text-blue-500" size={16} />
-            바코드 스캔
+            바코드 스캔 {isScanning && "(ON)"}
           </h3>
           <button onClick={() => { stopScanning(); onClose(); }} className="text-zinc-400 hover:text-white transition-colors">
             <X size={24} />

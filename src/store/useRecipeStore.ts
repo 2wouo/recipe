@@ -27,12 +27,12 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
       return;
     }
 
-    const mappedRecipes: Recipe[] = data.map((row: any) => ({
-      id: row.id,
-      title: row.title,
-      description: row.description,
-      currentVersion: row.current_version,
-      versions: row.versions || [], // JSONB data directly maps to array
+    const mappedRecipes: Recipe[] = (data || []).map((row: Record<string, unknown>) => ({
+      id: row.id as string,
+      title: row.title as string,
+      description: row.description as string,
+      currentVersion: row.current_version as string,
+      versions: (row.versions as RecipeVersion[]) || [],
     }));
 
     set({ recipes: mappedRecipes });
@@ -60,7 +60,7 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
   },
 
   updateRecipe: async (id, updatedRecipe) => {
-    const updates: any = {};
+    const updates: Record<string, unknown> = {};
     if (updatedRecipe.title) updates.title = updatedRecipe.title;
     if (updatedRecipe.description !== undefined) updates.description = updatedRecipe.description;
     
