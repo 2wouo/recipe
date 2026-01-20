@@ -17,7 +17,7 @@ export default function Sidebar() {
   const { signOut, user } = useAuthStore();
 
   return (
-    <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col border-r border-zinc-800 bg-zinc-950 p-6">
+    <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col border-r border-zinc-800 bg-zinc-950 p-6 z-40">
       <div className="mb-10 flex items-center gap-2">
         <div className="h-8 w-8 rounded-sm bg-blue-600 flex items-center justify-center">
           <span className="text-white font-bold text-lg">K</span>
