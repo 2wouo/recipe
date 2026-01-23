@@ -414,36 +414,116 @@ function RecipesContent() {
             </div>
 
             {isAddingVersion ? (
-              <form onSubmit={handleSaveVersion} className="space-y-6 rounded-sm border border-blue-500/30 bg-blue-900/10 p-4 md:p-6">
-                <h3 className="text-lg font-bold text-blue-400">{editingVersionIndex !== null ? '버전 수정' : '새 버전 기록'}</h3>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2"><label className="text-xs font-medium text-zinc-400">버전</label><input className="w-full rounded-sm border border-zinc-700 bg-black px-3 py-2 text-sm outline-none focus:border-blue-500" value={newVersion.version} onChange={e => setNewVersion({...newVersion, version: e.target.value})} /></div>
-                  <div className="space-y-2"><label className="text-xs font-medium text-zinc-400">변경 사항</label><input className="w-full rounded-sm border border-zinc-700 bg-black px-3 py-2 text-sm outline-none focus:border-blue-500" value={newVersion.notes} onChange={e => setNewVersion({...newVersion, notes: e.target.value})} /></div>
+              <form onSubmit={handleSaveVersion} className="space-y-6 rounded-lg border border-zinc-800 bg-zinc-900/20 p-6 animate-in fade-in slide-in-from-bottom-2">
+                <div className="flex items-center justify-between border-b border-zinc-800 pb-4 mb-6">
+                    <h3 className="text-lg font-bold text-zinc-100">{editingVersionIndex !== null ? '버전 수정' : '새 버전 기록'}</h3>
+                    <div className="flex gap-2">
+                        <button type="button" onClick={() => setIsAddingVersion(false)} className="px-3 py-1.5 text-xs font-medium text-zinc-400 hover:text-white transition-colors">취소</button>
+                        <button type="submit" className="rounded-md bg-blue-600 px-4 py-1.5 text-xs font-bold text-white hover:bg-blue-700 shadow-lg shadow-blue-900/20 transition-all">저장하기</button>
+                    </div>
                 </div>
-                <div className="space-y-2"><label className="text-xs font-medium text-zinc-400">메모</label><textarea className="w-full h-20 resize-none rounded-sm border border-zinc-700 bg-black px-3 py-2 text-sm outline-none focus:border-blue-500" value={newVersion.memo} onChange={e => setNewVersion({...newVersion, memo: e.target.value})} /></div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between"><label className="text-xs font-medium text-zinc-400">재료</label><button type="button" onClick={() => setIsQuickAddOpen(true)} className="text-[10px] text-blue-500">+ 새 재료 등록</button></div>
+
+                <div className="grid gap-6 md:grid-cols-2">
+                  <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-zinc-500">버전 (Version)</label>
+                      <input 
+                        className="w-full rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2.5 text-sm text-zinc-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all" 
+                        value={newVersion.version} 
+                        onChange={e => setNewVersion({...newVersion, version: e.target.value})} 
+                        placeholder="예: 1.0"
+                      />
+                  </div>
+                  <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-zinc-500">변경 사항 (Changelog)</label>
+                      <input 
+                        className="w-full rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2.5 text-sm text-zinc-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all" 
+                        value={newVersion.notes} 
+                        onChange={e => setNewVersion({...newVersion, notes: e.target.value})} 
+                        placeholder="무엇이 바뀌었나요?"
+                      />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-zinc-500">메모 & 팁</label>
+                    <textarea 
+                        className="w-full h-24 resize-none rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2.5 text-sm text-zinc-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-zinc-600" 
+                        value={newVersion.memo} 
+                        onChange={e => setNewVersion({...newVersion, memo: e.target.value})} 
+                        placeholder="조리 팁이나 주의사항을 기록하세요."
+                    />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">재료 목록</label>
+                      <button type="button" onClick={addIngredientRow} className="text-xs font-medium text-blue-500 hover:text-blue-400 flex items-center gap-1">
+                          <Plus size={12} /> 재료 추가
+                      </button>
+                  </div>
                   
                   <div className="space-y-2">
                     {newVersion.ingredients.map((ing, idx) => (
-                      <div key={idx} className="flex gap-2 items-start">
-                         <div className="flex-[2]">
+                      <div key={idx} className="flex gap-2 items-start group">
+                         <div className="flex-[3]">
                             <Autocomplete 
                               options={products.map(p => p.name)}
                               value={ing.name}
                               onChange={(val) => updateIngredient(idx, 'name', val)}
-                              placeholder="재료명"
+                              placeholder="재료명 (예: 양파)"
                             />
                          </div>
-                         <input placeholder="수량" value={ing.amount} onChange={e => updateIngredient(idx, 'amount', e.target.value)} className="flex-1 rounded-sm border border-zinc-700 bg-black px-3 py-2 text-sm outline-none focus:border-blue-500" />
-                         <button type="button" onClick={() => removeIngredientRow(idx)} className="mt-2 text-zinc-500 hover:text-red-500"><Trash2 size={16} /></button>
+                         <input 
+                            placeholder="수량" 
+                            value={ing.amount} 
+                            onChange={e => updateIngredient(idx, 'amount', e.target.value)} 
+                            className="flex-1 rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-zinc-600" 
+                         />
+                         <button 
+                            type="button" 
+                            onClick={() => removeIngredientRow(idx)} 
+                            className="mt-2 text-zinc-600 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            tabIndex={-1}
+                         >
+                            <Trash2 size={14} />
+                         </button>
                       </div>
                     ))}
                   </div>
-                  <button type="button" onClick={addIngredientRow} className="text-xs text-blue-500">+ 재료 추가</button>
                 </div>
-                <div className="space-y-3"><label className="text-xs font-medium text-zinc-400">조리 순서</label><div className="space-y-2">{newVersion.steps.map((step, idx) => (<div key={idx} className="flex gap-2"><span className="text-xs text-zinc-600">{idx+1}</span><textarea rows={2} className="flex-1 rounded-sm border border-zinc-700 bg-black px-3 py-2 text-sm outline-none focus:border-blue-500" value={step} onChange={e => updateStep(idx, e.target.value)} /><button type="button" onClick={() => removeStepRow(idx)} className="text-zinc-500 hover:text-red-500"><Trash2 size={16} /></button></div>))}</div><button type="button" onClick={addStepRow} className="text-xs text-blue-500">+ 단계 추가</button></div>
-                <button type="submit" className="w-full rounded-sm bg-blue-600 py-3 text-sm font-bold">저장</button>
+
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">조리 순서</label>
+                        <button type="button" onClick={addStepRow} className="text-xs font-medium text-blue-500 hover:text-blue-400 flex items-center gap-1">
+                            <Plus size={12} /> 단계 추가
+                        </button>
+                    </div>
+                    <div className="space-y-3">
+                        {newVersion.steps.map((step, idx) => (
+                            <div key={idx} className="flex gap-3 group">
+                                <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-[10px] font-bold text-zinc-400 mt-1.5">
+                                    {idx+1}
+                                </div>
+                                <textarea 
+                                    rows={2} 
+                                    className="flex-1 rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2.5 text-sm text-zinc-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all resize-none placeholder:text-zinc-600" 
+                                    value={step} 
+                                    onChange={e => updateStep(idx, e.target.value)} 
+                                    placeholder="조리 과정을 입력하세요."
+                                />
+                                <button 
+                                    type="button" 
+                                    onClick={() => removeStepRow(idx)} 
+                                    className="mt-3 text-zinc-600 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    tabIndex={-1}
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
               </form>
             ) : (
               <div className="space-y-8">
