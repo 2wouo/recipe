@@ -3,9 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useCommunityStore } from '@/store/useCommunityStore';
 import { useAuthStore } from '@/store/useAuthStore';
-import { Search, Heart, User, Clock, Trash2, BookOpen, ChevronRight, X, ChefHat, ExternalLink } from 'lucide-react';
+import { Search, Heart, User, Clock, Trash2, BookOpen, ChevronRight, X, ChefHat, ExternalLink, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
-import { CommunityRecipe } from '@/types';
+import { CommunityRecipe, Recipe } from '@/types';
+import PublishModal from '@/components/community/PublishModal';
 
 export default function CommunityPage() {
   const { communityRecipes, myCommunityRecipes, loading, fetchCommunityRecipes, fetchMyCommunityRecipes, deleteCommunityRecipe } = useCommunityStore();
@@ -13,6 +14,7 @@ export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<'all' | 'mine'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRecipe, setSelectedRecipe] = useState<CommunityRecipe | null>(null);
+  const [recipeToEdit, setRecipeToEdit] = useState<CommunityRecipe | null>(null);
 
   useEffect(() => {
     fetchCommunityRecipes();
@@ -31,7 +33,27 @@ export default function CommunityPage() {
     }
   };
 
+  const handleEdit = (recipe: CommunityRecipe, e: React.MouseEvent) => {
+      e.stopPropagation();
+      setRecipeToEdit(recipe);
+  };
+
   const recipesToShow = activeTab === 'all' ? communityRecipes : myCommunityRecipes;
+
+  // Convert CommunityRecipe to Recipe for the modal props
+  const mockRecipeForEdit: Recipe | null = recipeToEdit ? {
+      id: recipeToEdit.original_recipe_id || '', // or just empty string if null
+      title: recipeToEdit.title,
+      description: recipeToEdit.description,
+      currentVersion: '1.0', // dummy
+      versions: [{
+          version: '1.0',
+          ingredients: recipeToEdit.ingredients,
+          steps: recipeToEdit.steps,
+          notes: '',
+          createdAt: recipeToEdit.created_at
+      }]
+  } : null;
 
   return (
     <div className="space-y-8 pb-20">
@@ -90,12 +112,20 @@ export default function CommunityPage() {
                     {recipe.title}
                   </h3>
                   {activeTab === 'mine' && (
-                    <button 
-                      onClick={(e) => handleDelete(recipe.id, e)}
-                      className="text-zinc-600 hover:text-red-500 p-1 transition-colors"
-                    >
-                      <Trash2 size={16} />
-                    </button>
+                    <div className="flex gap-1">
+                        <button 
+                        onClick={(e) => handleEdit(recipe, e)}
+                        className="text-zinc-600 hover:text-blue-500 p-1 transition-colors"
+                        >
+                        <Pencil size={16} />
+                        </button>
+                        <button 
+                        onClick={(e) => handleDelete(recipe.id, e)}
+                        className="text-zinc-600 hover:text-red-500 p-1 transition-colors"
+                        >
+                        <Trash2 size={16} />
+                        </button>
+                    </div>
                   )}
                 </div>
                 
@@ -132,6 +162,16 @@ export default function CommunityPage() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Edit Modal */}
+      {mockRecipeForEdit && recipeToEdit && (
+          <PublishModal 
+            recipe={mockRecipeForEdit}
+            communityRecipeId={recipeToEdit.id}
+            isOpen={!!recipeToEdit}
+            onClose={() => setRecipeToEdit(null)}
+          />
       )}
 
       {/* Recipe Detail Modal */}

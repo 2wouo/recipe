@@ -11,6 +11,7 @@ interface CommunityState {
   fetchCommunityRecipes: (searchQuery?: string) => Promise<void>;
   fetchMyCommunityRecipes: () => Promise<void>;
   publishRecipe: (recipe: Omit<CommunityRecipe, 'id' | 'created_at' | 'likes_count' | 'author_id'>) => Promise<{ success: boolean; error?: string }>;
+  updateCommunityRecipe: (id: string, updates: Partial<Omit<CommunityRecipe, 'id' | 'created_at' | 'likes_count' | 'author_id'>>) => Promise<{ success: boolean; error?: string }>;
   deleteCommunityRecipe: (id: string) => Promise<void>;
   toggleLike: (id: string) => Promise<void>;
 }
@@ -19,6 +20,8 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
   communityRecipes: [],
   myCommunityRecipes: [],
   loading: false,
+
+  // ... (fetch functions remain same)
 
   fetchCommunityRecipes: async (searchQuery) => {
     set({ loading: true });
@@ -113,6 +116,27 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
     set(state => ({
       communityRecipes: [data as CommunityRecipe, ...state.communityRecipes],
       myCommunityRecipes: [data as CommunityRecipe, ...state.myCommunityRecipes]
+    }));
+
+    return { success: true };
+  },
+
+  updateCommunityRecipe: async (id, updates) => {
+    const supabase = createClient();
+    const { error } = await supabase
+      .from('community_recipes')
+      .update(updates)
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating community recipe:', error);
+      return { success: false, error: error.message };
+    }
+
+    // Update local state
+    set(state => ({
+      communityRecipes: state.communityRecipes.map(r => r.id === id ? { ...r, ...updates } : r),
+      myCommunityRecipes: state.myCommunityRecipes.map(r => r.id === id ? { ...r, ...updates } : r)
     }));
 
     return { success: true };

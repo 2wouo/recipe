@@ -8,12 +8,14 @@ import { X, Send, AlertCircle, Trash2, Plus } from 'lucide-react';
 interface PublishModalProps {
   recipe: Recipe;
   version?: RecipeVersion;
+  communityRecipeId?: string; // If present, we are editing an existing community recipe
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function PublishModal({ recipe, version, isOpen, onClose }: PublishModalProps) {
-  const { publishRecipe } = useCommunityStore();
+export default function PublishModal({ recipe, version, communityRecipeId, isOpen, onClose }: PublishModalProps) {
+  const { publishRecipe, updateCommunityRecipe } = useCommunityStore();
+  const isEditMode = !!communityRecipeId;
   
   // Use passed version, or fallback to current representative version
   const targetVersion = version || recipe.versions.find(v => v.version === recipe.currentVersion) || recipe.versions[0];
@@ -40,19 +42,30 @@ export default function PublishModal({ recipe, version, isOpen, onClose }: Publi
     e.preventDefault();
     setIsSubmitting(true);
 
-    const result = await publishRecipe({
-      original_recipe_id: recipe.id,
-      title,
-      description,
-      ingredients,
-      steps
-    });
+    let result;
+    
+    if (isEditMode && communityRecipeId) {
+        result = await updateCommunityRecipe(communityRecipeId, {
+            title,
+            description,
+            ingredients,
+            steps
+        });
+    } else {
+        result = await publishRecipe({
+            original_recipe_id: recipe.id,
+            title,
+            description,
+            ingredients,
+            steps
+        });
+    }
 
     if (result.success) {
-      alert('커뮤니티에 레시피가 공유되었습니다!');
+      alert(isEditMode ? '게시글이 수정되었습니다.' : '커뮤니티에 레시피가 공유되었습니다!');
       onClose();
     } else {
-      alert('공유 실패: ' + result.error);
+      alert((isEditMode ? '수정 실패: ' : '공유 실패: ') + result.error);
     }
     setIsSubmitting(false);
   };
@@ -92,10 +105,10 @@ export default function PublishModal({ recipe, version, isOpen, onClose }: Publi
           <div>
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
                 <Send size={20} className="text-blue-500" />
-                커뮤니티에 레시피 공유
+                {isEditMode ? '게시글 수정' : '커뮤니티에 레시피 공유'}
             </h2>
             <p className="text-xs text-zinc-500 mt-1">
-                개인적인 메모나 팁은 자동으로 제외되었습니다. 공유하기 전 내용을 확인하세요.
+                {isEditMode ? '커뮤니티에 게시된 내용을 수정합니다. 원본 레시피는 변경되지 않습니다.' : '개인적인 메모나 팁은 자동으로 제외되었습니다. 공유하기 전 내용을 확인하세요.'}
             </p>
           </div>
           <button onClick={onClose} className="text-zinc-500 hover:text-white p-1">
@@ -192,7 +205,7 @@ export default function PublishModal({ recipe, version, isOpen, onClose }: Publi
               disabled={isSubmitting}
               className="flex-[2] h-12 rounded-sm bg-blue-600 text-white hover:bg-blue-700 text-sm font-black disabled:opacity-50"
             >
-              {isSubmitting ? <Loader2 className="animate-spin mx-auto" /> : '커뮤니티에 게시하기'}
+              {isSubmitting ? <Loader2 className="animate-spin mx-auto" /> : (isEditMode ? '수정사항 저장' : '커뮤니티에 게시하기')}
             </button>
           </div>
         </form>
