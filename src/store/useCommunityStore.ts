@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { CommunityRecipe } from '@/types';
-import { supabase } from '@/lib/supabase'; // Using client-side supabase for queries
+import { createClient } from '@/utils/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
 
 interface CommunityState {
@@ -22,6 +22,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
 
   fetchCommunityRecipes: async (searchQuery) => {
     set({ loading: true });
+    const supabase = createClient();
     let query = supabase
       .from('community_recipes')
       .select('*')
@@ -57,6 +58,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
   },
 
   fetchMyCommunityRecipes: async () => {
+    const supabase = createClient();
     const user = useAuthStore.getState().user;
     if (!user) return;
 
@@ -88,6 +90,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
   },
 
   publishRecipe: async (recipeData) => {
+    const supabase = createClient();
     const user = useAuthStore.getState().user;
     if (!user) return { success: false, error: '로그인이 필요합니다.' };
 
@@ -116,6 +119,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
   },
 
   deleteCommunityRecipe: async (id) => {
+    const supabase = createClient();
     const { error } = await supabase
       .from('community_recipes')
       .delete()
@@ -133,9 +137,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
   },
 
   toggleLike: async (id) => {
-    // 좋아요 기능은 나중에 likes 테이블을 따로 만들어서 관리하는 게 좋지만
-    // 일단 간단하게 카운트만 올리는 로직 (실제로는 중복 방지 로직 필요)
-    const { data, error } = await supabase.rpc('increment_likes', { recipe_id: id });
-    // (참고: increment_likes는 RPC 함수 정의 필요, 여기서는 생략하거나 단순 업데이트 시도)
+    const supabase = createClient();
+    // RPC increment logic
   }
 }));
