@@ -32,9 +32,11 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
   fetchCommunityRecipes: async (searchQuery) => {
     set({ loading: true });
     const supabase = createClient();
+    
+    // profiles 테이블과 조인하여 항상 최신 닉네임과 아바타를 가져옴
     let query = supabase
       .from('community_recipes')
-      .select('*')
+      .select('*, profiles:author_id(username, avatar_url)')
       .order('created_at', { ascending: false });
 
     if (searchQuery) {
@@ -50,7 +52,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
     }
 
     set({ 
-      communityRecipes: (data || []).map(row => ({
+      communityRecipes: (data || []).map((row: any) => ({
         id: row.id,
         original_recipe_id: row.original_recipe_id,
         title: row.title,
@@ -58,7 +60,9 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
         ingredients: row.ingredients,
         steps: row.steps,
         author_id: row.author_id,
-        author_name: row.author_name,
+        // 조인된 프로필 정보 사용 (없으면 스냅샷 사용)
+        author_name: row.profiles?.username || row.author_name,
+        author_avatar_url: row.profiles?.avatar_url,
         created_at: row.created_at,
         likes_count: row.likes_count
       })),
@@ -73,7 +77,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
 
     const { data, error } = await supabase
       .from('community_recipes')
-      .select('*')
+      .select('*, profiles:author_id(username, avatar_url)')
       .eq('author_id', user.id)
       .order('created_at', { ascending: false });
 
@@ -83,7 +87,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
     }
 
     set({ 
-      myCommunityRecipes: (data || []).map(row => ({
+      myCommunityRecipes: (data || []).map((row: any) => ({
         id: row.id,
         original_recipe_id: row.original_recipe_id,
         title: row.title,
@@ -91,7 +95,8 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
         ingredients: row.ingredients,
         steps: row.steps,
         author_id: row.author_id,
-        author_name: row.author_name,
+        author_name: row.profiles?.username || row.author_name,
+        author_avatar_url: row.profiles?.avatar_url,
         created_at: row.created_at,
         likes_count: row.likes_count
       }))
@@ -108,9 +113,9 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
       .insert({
         ...recipeData,
         author_id: user.id,
-        author_name: user.user_metadata?.display_name || user.email?.split('@')[0] || '사용자',
+        author_name: user.user_metadata?.username || user.email?.split('@')[0] || '사용자',
       })
-      .select()
+      .select('*, profiles:author_id(username, avatar_url)')
       .single();
 
     if (error) {
@@ -118,10 +123,15 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
       return { success: false, error: error.message };
     }
 
-    // Update local state
+    const mapped = {
+        ...data,
+        author_name: (data as any).profiles?.username || (data as any).author_name,
+        author_avatar_url: (data as any).profiles?.avatar_url
+    } as CommunityRecipe;
+
     set(state => ({
-      communityRecipes: [data as CommunityRecipe, ...state.communityRecipes],
-      myCommunityRecipes: [data as CommunityRecipe, ...state.myCommunityRecipes]
+      communityRecipes: [mapped, ...state.communityRecipes],
+      myCommunityRecipes: [mapped, ...state.myCommunityRecipes]
     }));
 
     return { success: true };
@@ -139,7 +149,6 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
       return { success: false, error: error.message };
     }
 
-    // Update local state
     set(state => ({
       communityRecipes: state.communityRecipes.map(r => r.id === id ? { ...r, ...updates } : r),
       myCommunityRecipes: state.myCommunityRecipes.map(r => r.id === id ? { ...r, ...updates } : r)
@@ -170,7 +179,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
     const supabase = createClient();
     const { data, error } = await supabase
       .from('comments')
-      .select('*')
+      .select('*, profiles:user_id(username, avatar_url)')
       .eq('recipe_id', recipeId)
       .order('created_at', { ascending: true });
 
@@ -179,7 +188,18 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
       return;
     }
     
-    set({ comments: data as Comment[] });
+    set({ 
+        comments: (data || []).map((row: any) => ({
+            id: row.id,
+            recipe_id: row.recipe_id,
+            parent_id: row.parent_id,
+            user_id: row.user_id,
+            user_name: row.profiles?.username || row.user_name,
+            user_avatar_url: row.profiles?.avatar_url || row.user_avatar_url,
+            content: row.content,
+            created_at: row.created_at
+        })) 
+    });
   },
 
   addComment: async (recipeId, content, parentId) => {
@@ -193,11 +213,11 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
         recipe_id: recipeId,
         parent_id: parentId || null,
         user_id: user.id,
-        user_name: user.user_metadata?.display_name || user.email?.split('@')[0] || '익명',
-        user_avatar_url: user.user_metadata?.avatar_url, // 아바타 저장
+        user_name: user.user_metadata?.username || user.email?.split('@')[0] || '익명',
+        user_avatar_url: user.user_metadata?.avatar_url,
         content
       })
-      .select()
+      .select('*, profiles:user_id(username, avatar_url)')
       .single();
 
     if (error) {
@@ -206,7 +226,13 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
       return;
     }
 
-    set(state => ({ comments: [...state.comments, data as Comment] }));
+    const mapped = {
+        ...data,
+        user_name: (data as any).profiles?.username || (data as any).user_name,
+        user_avatar_url: (data as any).profiles?.avatar_url || (data as any).user_avatar_url
+    } as Comment;
+
+    set(state => ({ comments: [...state.comments, mapped] }));
   },
 
   deleteComment: async (commentId) => {
@@ -225,7 +251,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
     const supabase = createClient();
     const { data, error } = await supabase
       .from('community_recipes')
-      .select('*')
+      .select('*, profiles:author_id(username, avatar_url)')
       .eq('author_id', authorId)
       .order('created_at', { ascending: false });
 
@@ -234,7 +260,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
       return [];
     }
 
-    return (data || []).map(row => ({
+    return (data || []).map((row: any) => ({
       id: row.id,
       original_recipe_id: row.original_recipe_id,
       title: row.title,
@@ -242,13 +268,14 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
       ingredients: row.ingredients,
       steps: row.steps,
       author_id: row.author_id,
-      author_name: row.author_name,
+      author_name: row.profiles?.username || row.author_name,
+      author_avatar_url: row.profiles?.avatar_url,
       created_at: row.created_at,
       likes_count: row.likes_count
     }));
   },
 
   toggleLike: async (id) => {
-    // 좋아요 로직 (생략 - RPC 필요)
+    // 좋아요 로직
   }
 }));

@@ -33,7 +33,16 @@ export default function RecipeDetailModal({ recipe, onClose }: RecipeDetailModal
             </div>
             <h2 className="text-3xl font-black text-white leading-tight">{recipe.title}</h2>
             <div className="mt-4 flex items-center gap-4 text-sm text-zinc-500">
-                <span className="flex items-center gap-1.5"><User size={14}/>{recipe.author_name}</span>
+                <span className="flex items-center gap-1.5">
+                    <div className="h-5 w-5 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden border border-zinc-700">
+                        {recipe.author_avatar_url ? (
+                            <img src={recipe.author_avatar_url} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                            <User size={12}/>
+                        )}
+                    </div>
+                    {recipe.author_name}
+                </span>
                 <span className="flex items-center gap-1.5"><Clock size={14}/>{format(new Date(recipe.created_at), 'yyyy.MM.dd')}</span>
             </div>
         </div>

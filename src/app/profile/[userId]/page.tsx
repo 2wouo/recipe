@@ -7,6 +7,7 @@ import { User, Clock, Heart, ArrowLeft, ChefHat } from 'lucide-react';
 import { format } from 'date-fns';
 import { useParams, useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
+import RecipeDetailModal from '@/components/community/RecipeDetailModal';
 
 export default function UserProfilePage() {
   const params = useParams();
@@ -16,6 +17,7 @@ export default function UserProfilePage() {
   
   const [recipes, setRecipes] = useState<CommunityRecipe[]>([]);
   const [profile, setProfile] = useState<{ username: string, avatar_url?: string } | null>(null);
+  const [selectedRecipe, setSelectedRecipe] = useState<CommunityRecipe | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,8 +27,6 @@ export default function UserProfilePage() {
       const supabase = createClient();
       
       // 1. Fetch User Profile
-      // Note: We might need to adjust this query if 'display_name' is not in 'profiles' table.
-      // Assuming 'username' is the display name for now.
       const { data: profileData } = await supabase
         .from('profiles')
         .select('username, avatar_url')
@@ -54,7 +54,7 @@ export default function UserProfilePage() {
           <button onClick={() => router.back()} className="p-2 -ml-2 text-zinc-400 hover:text-white transition-colors">
               <ArrowLeft size={24} />
           </button>
-          <h2 className="text-xl font-bold tracking-tight">요리사 프로필</h2>
+          <h2 className="text-xl font-bold tracking-tight text-white">요리사 프로필</h2>
        </div>
 
        {loading ? (
@@ -81,14 +81,14 @@ export default function UserProfilePage() {
 
             {/* Recipe Grid */}
             <div className="space-y-4">
-                <h3 className="text-sm font-bold text-zinc-400 pl-1">공개된 레시피</h3>
+                <h3 className="text-sm font-bold text-zinc-400 pl-1">레시피</h3>
                 {recipes.length > 0 ? (
                     <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                         {recipes.map((recipe) => (
                             <div 
                                 key={recipe.id}
-                                // Note: detailed view logic is in CommunityPage, here we just show preview
-                                className="group relative flex flex-col rounded-sm border border-zinc-800 bg-zinc-900/30 p-5 hover:bg-zinc-900/60 hover:border-zinc-700 transition-all"
+                                onClick={() => setSelectedRecipe(recipe)}
+                                className="group relative flex flex-col rounded-sm border border-zinc-800 bg-zinc-900/30 p-5 hover:bg-zinc-900/60 hover:border-zinc-700 transition-all cursor-pointer"
                             >
                                 <div className="mb-4">
                                     <h3 className="text-lg font-bold text-white group-hover:text-blue-400 transition-colors leading-snug">
@@ -107,11 +107,18 @@ export default function UserProfilePage() {
                     </div>
                 ) : (
                     <p className="text-center text-zinc-500 py-10 border border-dashed border-zinc-800 rounded-sm">
-                        등록된 공개 레시피가 없습니다.
+                        등록된 레시피가 없습니다.
                     </p>
                 )}
             </div>
            </>
+       )}
+
+       {selectedRecipe && (
+           <RecipeDetailModal 
+                recipe={selectedRecipe}
+                onClose={() => setSelectedRecipe(null)}
+           />
        )}
     </div>
   );

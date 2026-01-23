@@ -146,8 +146,12 @@ export default function CommunityPage() {
                         router.push(`/profile/${recipe.author_id}`);
                     }}
                   >
-                    <div className="h-6 w-6 rounded-full bg-zinc-800 flex items-center justify-center group-hover/author:bg-blue-900/30 transition-colors">
-                        <User size={12} className="text-zinc-500 group-hover/author:text-blue-400" />
+                    <div className="h-6 w-6 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden group-hover/author:bg-blue-900/30 transition-colors">
+                        {recipe.author_avatar_url ? (
+                            <img src={recipe.author_avatar_url} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                            <User size={12} className="text-zinc-500 group-hover/author:text-blue-400" />
+                        )}
                     </div>
                     <span className="text-xs text-zinc-500 group-hover/author:text-blue-400">{recipe.author_name}</span>
                   </div>
