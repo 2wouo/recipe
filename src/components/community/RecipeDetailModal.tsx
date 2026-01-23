@@ -79,7 +79,6 @@ export default function RecipeDetailModal({ recipe, onClose }: RecipeDetailModal
                         {recipe.ingredients.map((ing, idx) => (
                             <li key={idx} className="flex justify-between text-sm py-1 border-b border-zinc-900/50">
                                 <span className={ing.isRequired ? "font-bold text-blue-400" : "text-zinc-200"}>
-                                    {ing.isRequired && <span className="text-blue-500 mr-1">*</span>}
                                     {ing.name}
                                 </span>
                                 <span className="text-zinc-500">{ing.amount}</span>

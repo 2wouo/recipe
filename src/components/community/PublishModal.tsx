@@ -148,6 +148,14 @@ export default function PublishModal({ recipe, version, communityRecipeId, isOpe
             <div className="grid gap-2">
               {ingredients.map((ing, idx) => (
                 <div key={idx} className="flex gap-2 items-center">
+                  <button 
+                    type="button" 
+                    onClick={() => updateIngredient(idx, 'isRequired', !ing.isRequired)} 
+                    className={`h-10 w-10 shrink-0 rounded-sm border transition-all flex items-center justify-center ${ing.isRequired ? 'bg-blue-600 border-blue-500 text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-600 hover:text-zinc-400'}`}
+                    title={ing.isRequired ? '필수 재료' : '선택 재료'}
+                  >
+                    <Asterisk size={16} />
+                  </button>
                   <input 
                     placeholder="재료명"
                     className="flex-[2] h-10 rounded-sm border border-zinc-800 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-blue-500"
@@ -160,15 +168,7 @@ export default function PublishModal({ recipe, version, communityRecipeId, isOpe
                     value={ing.amount}
                     onChange={e => updateIngredient(idx, 'amount', e.target.value)}
                   />
-                  <button 
-                    type="button" 
-                    onClick={() => updateIngredient(idx, 'isRequired', !ing.isRequired)} 
-                    className={`p-1.5 rounded-sm border transition-all ${ing.isRequired ? 'bg-blue-600 border-blue-500 text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}
-                    title={ing.isRequired ? '필수 재료' : '선택 재료'}
-                  >
-                    <Asterisk size={14} />
-                  </button>
-                  <button type="button" onClick={() => removeIngredient(idx)} className="text-zinc-600 hover:text-red-500 p-1">
+                  <button type="button" onClick={() => removeIngredient(idx)} className="text-zinc-600 hover:text-red-500 p-1 shrink-0">
                     <Trash2 size={16} />
                   </button>
                 </div>
