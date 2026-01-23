@@ -13,7 +13,7 @@ import PublishModal from '@/components/community/PublishModal';
 import Autocomplete from '@/components/ui/Autocomplete';
 
 function RecipesContent() {
-  const { recipes, addRecipe, addVersion, updateRecipe, updateVersion, setPrimaryVersion, deleteRecipe, fetchRecipes } = useRecipeStore();
+  const { recipes, addRecipe, addVersion, updateRecipe, updateVersion, setPrimaryVersion, deleteRecipe, deleteVersion, fetchRecipes } = useRecipeStore();
   const { items: inventoryItems, fetchItems } = useInventoryStore();
   const { products, fetchProducts } = useProductStore();
   
@@ -31,6 +31,7 @@ function RecipesContent() {
   const [isAddingRecipe, setIsAddingRecipe] = useState(false);
   const [isAddingVersion, setIsAddingVersion] = useState(false);
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [selectedVersionForPublish, setSelectedVersionForPublish] = useState<RecipeVersion | undefined>(undefined);
   const [editingVersionIndex, setEditingVersionIndex] = useState<number | null>(null);
   
   const selectedRecipe = recipes.find(r => r.id === selectedRecipeId);
@@ -189,6 +190,18 @@ function RecipesContent() {
     setIsAddingVersion(true);
   };
 
+  const handleDeleteVersion = (index: number) => {
+    if (!selectedRecipeId) return;
+    if (confirm('정말로 이 버전을 삭제하시겠습니까?')) {
+        deleteVersion(selectedRecipeId, index);
+    }
+  };
+
+  const handleOpenPublish = (version: RecipeVersion) => {
+      setSelectedVersionForPublish(version);
+      setIsPublishModalOpen(true);
+  };
+
   const updateIngredient = (index: number, field: 'name' | 'amount', value: string) => {
     const updated = [...newVersion.ingredients];
     updated[index] = { ...updated[index], [field]: value };
@@ -229,17 +242,22 @@ function RecipesContent() {
 
   const sortedVersions = (() => {
     if (!selectedRecipe) return [];
-    const versions = [...selectedRecipe.versions];
-    const primaryIndex = versions.findIndex(v => v.version === selectedRecipe.currentVersion);
-    let primaryVersion: RecipeVersion | null = null;
-    let otherVersions: RecipeVersion[] = [];
+    // Map versions to include their original index for editing/deleting
+    const versionsWithIndex = selectedRecipe.versions.map((v, idx) => ({ ...v, originalIndex: idx }));
+    const primaryIndex = versionsWithIndex.findIndex(v => v.version === selectedRecipe.currentVersion);
+    
+    let primaryVersion = null;
+    let otherVersions = [];
+
     if (primaryIndex !== -1) {
-      primaryVersion = versions[primaryIndex];
-      otherVersions = versions.filter((_, idx) => idx !== primaryIndex);
+      primaryVersion = versionsWithIndex[primaryIndex];
+      otherVersions = versionsWithIndex.filter((_, idx) => idx !== primaryIndex);
     } else {
-        otherVersions = versions;
+        otherVersions = versionsWithIndex;
     }
+    // Sort other versions: newest first
     otherVersions.reverse();
+    
     return primaryVersion ? [primaryVersion, ...otherVersions] : otherVersions;
   })();
 
@@ -529,7 +547,6 @@ function RecipesContent() {
               <div className="space-y-8">
                 {sortedVersions.map((v) => {
                   const isPrimary = v.version === selectedRecipe.currentVersion;
-                  const originalIndex = selectedRecipe.versions.findIndex(orig => orig.version === v.version);
                   return (
                     <div key={v.version} className={`relative rounded-sm border bg-zinc-900/30 group ${isPrimary ? 'border-pink-500/50 ring-1 ring-pink-500/20' : 'border-zinc-800'}`}>
                       <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-900/50 p-4">
@@ -538,8 +555,17 @@ function RecipesContent() {
                           {isPrimary && <span className="flex items-center gap-1 rounded-full bg-pink-500/10 px-2 py-0.5 text-[10px] font-bold text-pink-500"><Star size={10} className="fill-pink-500" />대표</span>}
                           
                           <div className="flex items-center gap-2">
-                            {!isPrimary && <button onClick={() => setPrimaryVersion(selectedRecipe.id, v.version)} className="text-[10px] text-zinc-500 hover:text-pink-500">대표 설정</button>}
-                            <button onClick={() => handleEditVersion(originalIndex)} className="text-zinc-400 hover:text-blue-500" title="버전 수정"><Pencil size={14} /></button>
+                            {!isPrimary && <button onClick={() => setPrimaryVersion(selectedRecipe.id, v.version)} className="text-[10px] text-zinc-500 hover:text-pink-500 mr-2">대표 설정</button>}
+                            
+                            <button onClick={() => handleOpenPublish(v as any)} className="text-zinc-400 hover:text-blue-500 p-1" title="커뮤니티 공유">
+                                <Send size={14} />
+                            </button>
+                            <button onClick={() => handleEditVersion((v as any).originalIndex)} className="text-zinc-400 hover:text-blue-500 p-1" title="수정">
+                                <Pencil size={14} />
+                            </button>
+                            <button onClick={() => handleDeleteVersion((v as any).originalIndex)} className="text-zinc-400 hover:text-red-500 p-1" title="삭제">
+                                <Trash2 size={14} />
+                            </button>
                           </div>
                         </div>
                       </div>
@@ -569,6 +595,7 @@ function RecipesContent() {
       {selectedRecipe && (
         <PublishModal 
           recipe={selectedRecipe} 
+          version={selectedVersionForPublish}
           isOpen={isPublishModalOpen} 
           onClose={() => setIsPublishModalOpen(false)} 
         />

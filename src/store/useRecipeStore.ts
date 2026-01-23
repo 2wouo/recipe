@@ -10,6 +10,7 @@ interface RecipeState {
   updateRecipe: (id: string, recipe: Partial<Recipe>) => Promise<void>;
   addVersion: (recipeId: string, version: RecipeVersion) => Promise<void>;
   updateVersion: (recipeId: string, versionIndex: number, updatedVersion: RecipeVersion) => Promise<void>;
+  deleteVersion: (recipeId: string, versionIndex: number) => Promise<void>;
   setPrimaryVersion: (recipeId: string, version: string) => Promise<void>;
   deleteRecipe: (id: string) => Promise<void>;
 }
@@ -139,6 +140,47 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
 
     if (error) {
         console.error('Error updating version:', error);
+        return;
+    }
+
+    set((state) => ({
+      recipes: state.recipes.map((r) => {
+        if (r.id !== recipeId) return r;
+        return {
+          ...r,
+          currentVersion: newCurrentVersion,
+          versions: newVersions,
+        };
+      }),
+    }));
+  },
+
+  deleteVersion: async (recipeId, versionIndex) => {
+    const supabase = createClient();
+    const recipe = get().recipes.find(r => r.id === recipeId);
+    if (!recipe) return;
+
+    if (recipe.versions.length <= 1) {
+        alert('최소 하나의 버전은 유지해야 합니다. 레시피 자체를 삭제해주세요.');
+        return;
+    }
+
+    const versionToDelete = recipe.versions[versionIndex];
+    const newVersions = recipe.versions.filter((_, idx) => idx !== versionIndex);
+    
+    // 대표 버전을 삭제하는 경우, 가장 최신 버전을 새 대표로 설정
+    let newCurrentVersion = recipe.currentVersion;
+    if (versionToDelete.version === recipe.currentVersion) {
+        newCurrentVersion = newVersions[newVersions.length - 1].version;
+    }
+
+    const { error } = await supabase.from('recipes').update({
+        versions: newVersions,
+        current_version: newCurrentVersion
+    }).eq('id', recipeId);
+
+    if (error) {
+        console.error('Error deleting version:', error);
         return;
     }
 

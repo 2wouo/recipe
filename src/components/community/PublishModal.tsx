@@ -7,18 +7,21 @@ import { X, Send, AlertCircle, Trash2, Plus } from 'lucide-react';
 
 interface PublishModalProps {
   recipe: Recipe;
+  version?: RecipeVersion;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export default function PublishModal({ recipe, isOpen, onClose }: PublishModalProps) {
+export default function PublishModal({ recipe, version, isOpen, onClose }: PublishModalProps) {
   const { publishRecipe } = useCommunityStore();
-  const currentVersion = recipe.versions.find(v => v.version === recipe.currentVersion) || recipe.versions[0];
+  
+  // Use passed version, or fallback to current representative version
+  const targetVersion = version || recipe.versions.find(v => v.version === recipe.currentVersion) || recipe.versions[0];
 
   const [title, setTitle] = useState(recipe.title);
   const [description, setDescription] = useState(recipe.description || '');
-  const [ingredients, setIngredients] = useState(currentVersion?.ingredients.map(i => ({ ...i })) || []);
-  const [steps, setSteps] = useState([...(currentVersion?.steps || [])]);
+  const [ingredients, setIngredients] = useState(targetVersion?.ingredients.map(i => ({ ...i })) || []);
+  const [steps, setSteps] = useState([...(targetVersion?.steps || [])]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
