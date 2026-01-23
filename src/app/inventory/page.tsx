@@ -11,6 +11,7 @@ import BarcodeScanner from '@/components/products/BarcodeScanner';
 import { searchBarcode } from '@/utils/mockBarcodeDb';
 import Autocomplete from '@/components/ui/Autocomplete';
 import ProductList from '@/components/products/ProductList';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 
 export default function InventoryPage() {
   const { items, addItem, updateItem, deleteItem, fetchItems } = useInventoryStore();
