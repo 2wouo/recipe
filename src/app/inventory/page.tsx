@@ -34,6 +34,7 @@ export default function InventoryPage() {
   // Quick Add Modal State
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
   const [quickAddName, setQuickAddName] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Form State
   const [formData, setFormData] = useState({
@@ -47,7 +48,10 @@ export default function InventoryPage() {
     barcode: ''
   });
 
-  const filteredItems = items.filter(item => item.storageType === activeTab);
+  const filteredItems = items.filter(item => 
+    item.storageType === activeTab &&
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const resetForm = () => {
     setFormData({
@@ -227,6 +231,16 @@ export default function InventoryPage() {
 
       {viewMode === 'INVENTORY' ? (
         <>
+            <div className="relative">
+                <Search className="absolute left-3 top-2.5 text-zinc-500" size={16} />
+                <input 
+                    className="w-full h-10 rounded-sm border border-zinc-800 bg-zinc-900 pl-9 pr-4 text-sm text-white outline-none focus:border-blue-500 transition-colors"
+                    placeholder="재고 검색..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                />
+            </div>
+
             <div className="flex justify-between items-center border-b border-zinc-800">
                 <div className="flex">
                     {(['FRIDGE', 'FREEZER', 'PANTRY'] as StorageType[]).map((tab) => (
