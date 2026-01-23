@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Product } from '@/types';
 import { createClient } from '@/utils/supabase/client';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface ProductState {
   products: Product[];
@@ -37,7 +38,8 @@ export const useProductStore = create<ProductState>((set, get) => ({
 
   addProduct: async (product) => {
     const supabase = createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = useAuthStore.getState().user;
+    
     if (!user) {
         alert('로그인이 필요합니다. 다시 로그인해주세요.');
         return;

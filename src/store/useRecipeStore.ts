@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Recipe, RecipeVersion } from '@/types';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface RecipeState {
   recipes: Recipe[];
@@ -17,6 +18,7 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
   recipes: [],
 
   fetchRecipes: async () => {
+    const supabase = createClient();
     const { data, error } = await supabase
       .from('recipes')
       .select('*')
@@ -27,21 +29,25 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
       return;
     }
 
-    const mappedRecipes: Recipe[] = (data || []).map((row: Record<string, unknown>) => ({
-      id: row.id as string,
-      title: row.title as string,
-      description: row.description as string,
-      currentVersion: row.current_version as string,
+    const mappedRecipes: Recipe[] = (data || []).map((row: any) => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      currentVersion: row.current_version,
       versions: (row.versions as RecipeVersion[]) || [],
+      user_id: row.user_id,
+      is_public: row.is_public
     }));
 
     set({ recipes: mappedRecipes });
   },
 
   addRecipe: async (recipe) => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const supabase = createClient();
+    const user = useAuthStore.getState().user;
+    
     if (!user) {
-        alert('로그인이 필요합니다.');
+        alert('로그인이 필요합니다. 다시 로그인해주세요.');
         return;
     }
 
@@ -64,11 +70,10 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
   },
 
   updateRecipe: async (id, updatedRecipe) => {
-    const updates: Record<string, unknown> = {};
+    const supabase = createClient();
+    const updates: any = {};
     if (updatedRecipe.title) updates.title = updatedRecipe.title;
     if (updatedRecipe.description !== undefined) updates.description = updatedRecipe.description;
-    
-    // versions나 currentVersion 업데이트는 별도 함수로 처리 권장하지만, 여기서도 가능
     if (updatedRecipe.currentVersion) updates.current_version = updatedRecipe.currentVersion;
     if (updatedRecipe.versions) updates.versions = updatedRecipe.versions;
 
@@ -87,6 +92,7 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
   },
 
   addVersion: async (recipeId, version) => {
+    const supabase = createClient();
     const recipe = get().recipes.find(r => r.id === recipeId);
     if (!recipe) return;
 
@@ -94,7 +100,7 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
     
     const { error } = await supabase.from('recipes').update({
         versions: updatedVersions,
-        current_version: version.version // 새 버전 추가 시 자동으로 대표 버전 변경? (기존 로직 따름)
+        current_version: version.version
     }).eq('id', recipeId);
 
     if (error) {
@@ -116,13 +122,13 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
   },
 
   updateVersion: async (recipeId, versionIndex, updatedVersion) => {
+    const supabase = createClient();
     const recipe = get().recipes.find(r => r.id === recipeId);
     if (!recipe) return;
 
     const newVersions = [...recipe.versions];
     newVersions[versionIndex] = updatedVersion;
     
-    // If we edited the last version, update currentVersion display too
     const isLatest = versionIndex === recipe.versions.length - 1;
     const newCurrentVersion = isLatest ? updatedVersion.version : recipe.currentVersion;
 
@@ -149,6 +155,7 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
   },
 
   setPrimaryVersion: async (recipeId, version) => {
+    const supabase = createClient();
     const { error } = await supabase.from('recipes').update({
         current_version: version
     }).eq('id', recipeId);
@@ -166,6 +173,7 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
   },
 
   deleteRecipe: async (id) => {
+    const supabase = createClient();
     const { error } = await supabase.from('recipes').delete().eq('id', id);
     if (error) {
         console.error('Error deleting recipe:', error);

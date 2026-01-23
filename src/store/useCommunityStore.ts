@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { CommunityRecipe } from '@/types';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase'; // Using client-side supabase for queries
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface CommunityState {
   communityRecipes: CommunityRecipe[];
@@ -56,7 +57,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
   },
 
   fetchMyCommunityRecipes: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = useAuthStore.getState().user;
     if (!user) return;
 
     const { data, error } = await supabase
@@ -87,7 +88,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
   },
 
   publishRecipe: async (recipeData) => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = useAuthStore.getState().user;
     if (!user) return { success: false, error: '로그인이 필요합니다.' };
 
     const { data, error } = await supabase
