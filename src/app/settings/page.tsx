@@ -3,15 +3,31 @@
 import { useAuthStore } from '@/store/useAuthStore';
 import { useRouter } from 'next/navigation';
 import { LogOut, User, Shield, Trash2, Mail } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function SettingsPage() {
   const { user, signOut } = useAuthStore();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
     window.location.href = '/login';
   };
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-8 animate-pulse">
+         <div className="h-8 w-32 bg-zinc-800 rounded"></div>
+         <div className="h-40 bg-zinc-800 rounded"></div>
+      </div>
+    )
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4">
