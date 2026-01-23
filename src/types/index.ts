@@ -55,6 +55,7 @@ export interface CommunityRecipe {
   author_name?: string;
   created_at: string;
   likes_count: number;
+  views_count: number;
   author_avatar_url?: string;
 }
 

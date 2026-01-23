@@ -2,7 +2,8 @@
 
 import { CommunityRecipe } from '@/types';
 import { useRecipeStore } from '@/store/useRecipeStore';
-import { BookOpen, X, ChefHat, User, Clock, Heart } from 'lucide-react';
+import { useCommunityStore } from '@/store/useCommunityStore';
+import { BookOpen, X, ChefHat, User, Clock, Heart, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import CommentSection from './CommentSection';
 
@@ -13,10 +14,15 @@ interface RecipeDetailModalProps {
 
 export default function RecipeDetailModal({ recipe, onClose }: RecipeDetailModalProps) {
   const { importRecipe } = useRecipeStore();
+  const { toggleLike } = useCommunityStore();
 
   const handleImport = async () => {
     await importRecipe(recipe);
     onClose();
+  };
+
+  const handleLike = async () => {
+      await toggleLike(recipe.id);
   };
 
   return (
@@ -27,9 +33,21 @@ export default function RecipeDetailModal({ recipe, onClose }: RecipeDetailModal
         </button>
 
         <div className="mb-8">
-            <div className="flex items-center gap-2 text-blue-500 text-xs font-bold uppercase tracking-widest mb-2">
-                <ChefHat size={14} />
-                Community Recipe
+            <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 text-blue-500 text-xs font-bold uppercase tracking-widest">
+                    <ChefHat size={14} />
+                    Community Recipe
+                </div>
+                <div className="flex items-center gap-4 text-xs text-zinc-500">
+                    <span className="flex items-center gap-1.5"><Eye size={14}/>{recipe.views_count}</span>
+                    <button 
+                        onClick={handleLike}
+                        className="flex items-center gap-1.5 hover:text-pink-500 transition-colors group"
+                    >
+                        <Heart size={14} className="group-active:scale-125 transition-transform" />
+                        {recipe.likes_count}
+                    </button>
+                </div>
             </div>
             <h2 className="text-3xl font-black text-white leading-tight">{recipe.title}</h2>
             <div className="mt-4 flex items-center gap-4 text-sm text-zinc-500">

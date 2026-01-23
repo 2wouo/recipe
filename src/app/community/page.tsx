@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useCommunityStore } from '@/store/useCommunityStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useRecipeStore } from '@/store/useRecipeStore';
-import { Search, Heart, User, Clock, Trash2, BookOpen, ChevronRight, X, ChefHat, ExternalLink, Pencil } from 'lucide-react';
+import { Search, Heart, User, Clock, Trash2, BookOpen, ChevronRight, X, ChefHat, ExternalLink, Pencil, Eye, ArrowDownWideNarrow } from 'lucide-react';
 import { format } from 'date-fns';
 import { CommunityRecipe, Recipe } from '@/types';
 import PublishModal from '@/components/community/PublishModal';
@@ -13,22 +13,25 @@ import { useRouter } from 'next/navigation';
 
 export default function CommunityPage() {
   const router = useRouter();
-  const { communityRecipes, myCommunityRecipes, loading, fetchCommunityRecipes, fetchMyCommunityRecipes, deleteCommunityRecipe } = useCommunityStore();
+  const { communityRecipes, myCommunityRecipes, loading, fetchCommunityRecipes, fetchMyCommunityRecipes, deleteCommunityRecipe, incrementViews } = useCommunityStore();
   const { importRecipe } = useRecipeStore();
   const { user } = useAuthStore();
+  
   const [activeTab, setActiveTab] = useState<'all' | 'mine'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortOrder] = useState<'created_at' | 'likes_count' | 'views_count'>('created_at');
+  
   const [selectedRecipe, setSelectedRecipe] = useState<CommunityRecipe | null>(null);
   const [recipeToEdit, setRecipeToEdit] = useState<CommunityRecipe | null>(null);
 
   useEffect(() => {
-    fetchCommunityRecipes();
+    fetchCommunityRecipes(searchQuery, sortBy);
     fetchMyCommunityRecipes();
-  }, [fetchCommunityRecipes, fetchMyCommunityRecipes]);
+  }, [fetchCommunityRecipes, fetchMyCommunityRecipes, sortBy]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchCommunityRecipes(searchQuery);
+    fetchCommunityRecipes(searchQuery, sortBy);
   };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
@@ -41,6 +44,11 @@ export default function CommunityPage() {
   const handleEdit = (recipe: CommunityRecipe, e: React.MouseEvent) => {
       e.stopPropagation();
       setRecipeToEdit(recipe);
+  };
+
+  const handleSelectRecipe = (recipe: CommunityRecipe) => {
+      setSelectedRecipe(recipe);
+      incrementViews(recipe.id); // 조회수 증가
   };
 
   const recipesToShow = activeTab === 'all' ? communityRecipes : myCommunityRecipes;
@@ -74,7 +82,7 @@ export default function CommunityPage() {
         <form onSubmit={handleSearch} className="relative w-full md:w-80">
           <Search className="absolute left-3 top-2.5 text-zinc-500" size={18} />
           <input 
-            placeholder="레시피 제목 검색..."
+            placeholder="레시피 제목 또는 작성자 검색..."
             className="w-full h-10 rounded-sm border border-zinc-800 bg-zinc-900 pl-10 pr-4 text-sm text-white outline-none focus:border-blue-500 transition-colors"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
@@ -82,20 +90,46 @@ export default function CommunityPage() {
         </form>
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-zinc-800">
-        <button 
-          onClick={() => setActiveTab('all')}
-          className={`px-6 py-3 text-sm font-medium transition-colors ${activeTab === 'all' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-zinc-500 hover:text-white'}`}
-        >
-          탐색하기
-        </button>
-        <button 
-          onClick={() => setActiveTab('mine')}
-          className={`px-6 py-3 text-sm font-medium transition-colors ${activeTab === 'mine' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-zinc-500 hover:text-white'}`}
-        >
-          내 게시물 ({myCommunityRecipes.length})
-        </button>
+      {/* Tabs & Sorting */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-800">
+        <div className="flex">
+            <button 
+            onClick={() => setActiveTab('all')}
+            className={`px-6 py-3 text-sm font-medium transition-colors ${activeTab === 'all' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-zinc-500 hover:text-white'}`}
+            >
+            탐색하기
+            </button>
+            <button 
+            onClick={() => setActiveTab('mine')}
+            className={`px-6 py-3 text-sm font-medium transition-colors ${activeTab === 'mine' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-zinc-500 hover:text-white'}`}
+            >
+            내 게시물 ({myCommunityRecipes.length})
+            </button>
+        </div>
+
+        {activeTab === 'all' && (
+            <div className="flex items-center gap-1 pb-2 sm:pb-0 px-2">
+                <ArrowDownWideNarrow size={14} className="text-zinc-500 mr-1" />
+                <button 
+                    onClick={() => setSortOrder('created_at')}
+                    className={`px-2 py-1 text-[10px] font-bold rounded-sm transition-colors ${sortBy === 'created_at' ? 'bg-zinc-800 text-blue-400' : 'text-zinc-600 hover:text-zinc-400'}`}
+                >
+                    최신순
+                </button>
+                <button 
+                    onClick={() => setSortOrder('likes_count')}
+                    className={`px-2 py-1 text-[10px] font-bold rounded-sm transition-colors ${sortBy === 'likes_count' ? 'bg-zinc-800 text-blue-400' : 'text-zinc-600 hover:text-zinc-400'}`}
+                >
+                    인기순
+                </button>
+                <button 
+                    onClick={() => setSortOrder('views_count')}
+                    className={`px-2 py-1 text-[10px] font-bold rounded-sm transition-colors ${sortBy === 'views_count' ? 'bg-zinc-800 text-blue-400' : 'text-zinc-600 hover:text-zinc-400'}`}
+                >
+                    조회순
+                </button>
+            </div>
+        )}
       </div>
 
       {loading ? (
@@ -109,7 +143,7 @@ export default function CommunityPage() {
             recipesToShow.map((recipe) => (
               <div 
                 key={recipe.id}
-                onClick={() => setSelectedRecipe(recipe)}
+                onClick={() => handleSelectRecipe(recipe)}
                 className="group relative flex flex-col rounded-sm border border-zinc-800 bg-zinc-900/30 p-5 hover:bg-zinc-900/60 hover:border-zinc-700 transition-all cursor-pointer"
               >
                 <div className="mb-4 flex items-start justify-between">
@@ -159,6 +193,10 @@ export default function CommunityPage() {
                     <div className="flex items-center gap-1 text-[10px]">
                         <Clock size={12} />
                         {format(new Date(recipe.created_at), 'MM.dd')}
+                    </div>
+                    <div className="flex items-center gap-1 text-[10px]">
+                        <Eye size={12} />
+                        {recipe.views_count}
                     </div>
                     <div className="flex items-center gap-1 text-[10px]">
                         <Heart size={12} />
