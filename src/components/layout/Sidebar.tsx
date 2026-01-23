@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Refrigerator, BookOpen, Settings, List, LogOut, Users } from 'lucide-react';
+import { LayoutDashboard, Refrigerator, BookOpen, Settings, LogOut, Users } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useEffect, useState } from 'react';
 
@@ -11,7 +11,6 @@ const menuItems = [
   { name: '재고 관리', href: '/inventory', icon: Refrigerator },
   { name: '레시피 기록', href: '/recipes', icon: BookOpen },
   { name: '커뮤니티', href: '/community', icon: Users },
-  { name: '식재료 마스터', href: '/products', icon: List },
 ];
 
 export default function Sidebar() {

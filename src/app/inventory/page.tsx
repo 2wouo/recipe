@@ -10,10 +10,13 @@ import QuickProductAddModal from '@/components/products/QuickProductAddModal';
 import BarcodeScanner from '@/components/products/BarcodeScanner';
 import { searchBarcode } from '@/utils/mockBarcodeDb';
 import Autocomplete from '@/components/ui/Autocomplete';
+import ProductList from '@/components/products/ProductList';
 
 export default function InventoryPage() {
   const { items, addItem, updateItem, deleteItem, fetchItems } = useInventoryStore();
   const { products, fetchProducts, addProduct } = useProductStore();
+  
+  const [viewMode, setViewMode] = useState<'INVENTORY' | 'MASTER'>('INVENTORY');
   const [activeTab, setActiveTab] = useState<StorageType>('FRIDGE');
 
   // Load data on mount
@@ -60,6 +63,14 @@ export default function InventoryPage() {
     setIsFormOpen(false);
   };
 
+  // ... (handleEditClick, handleSubmit, fetchProductFromExternal, handleScanSuccess, getDDay implementations remain same)
+  // Need to copy them here because I'm replacing the whole component body basically.
+  // Actually, I should use the existing implementations.
+  // I will use 'replace' to inject the ViewMode switcher and condition the rendering.
+
+  // Re-implementing handlers for context (since I'm replacing the whole file content structure effectively via 'replace' with a large block, 
+  // but to be safe and precise, I'll stick to the existing handlers and just wrap the return JSX)
+  
   const handleEditClick = (item: InventoryItem) => {
     setEditingItemId(item.id);
     const match = item.quantity.match(/^(\d+)\s*(.*)$/);
@@ -111,9 +122,7 @@ export default function InventoryPage() {
     resetForm();
   };
 
-  // 외부 API들에서 상품 정보 조회 (멀티 소스)
   const fetchProductFromExternal = async (barcode: string): Promise<string | null> => {
-    // 1. Open Food Facts (글로벌/한국 식품 특화)
     try {
       const response = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode}.json`);
       const data = await response.json();
@@ -122,7 +131,6 @@ export default function InventoryPage() {
       }
     } catch (e) {}
 
-    // 2. UPCItemDB (공산품/글로벌 특화 폴백)
     try {
       const response = await fetch(`https://api.upcitemdb.com/prod/trial/lookup?upc=${barcode}`);
       const data = await response.json();
@@ -136,12 +144,9 @@ export default function InventoryPage() {
 
   const handleScanSuccess = async (decodedText: string) => {
     setIsScannerOpen(false);
-    
-    // 1. 외부 API 검색 (무조건 먼저 실행)
     const externalName = await fetchProductFromExternal(decodedText);
     
     if (externalName) {
-        // 외부 DB에서 찾았을 때
         setFormData(prev => ({
             ...prev,
             name: externalName,
@@ -149,20 +154,17 @@ export default function InventoryPage() {
             barcode: decodedText
         }));
 
-        // [지능형 학습] 외부에서 찾은 제품을 내 '식재료 마스터'에도 자동 등록 (없을 경우에만)
         const existsInMaster = products.some(p => p.name === externalName || p.barcodes?.includes(decodedText));
         if (!existsInMaster) {
             addProduct({
                 id: crypto.randomUUID(),
                 name: externalName,
-                category: '기타', // 나중에 사용자가 수정 가능
+                category: '기타',
                 barcodes: [decodedText]
             });
         }
     } else {
-        // 2. 외부 DB에 없을 때만 내 DB 검색
         const matchedProduct = products.find(p => p.barcodes?.includes(decodedText));
-        
         if (matchedProduct) {
             setFormData(prev => ({
                 ...prev,
@@ -171,7 +173,6 @@ export default function InventoryPage() {
                 barcode: decodedText
             }));
         } else {
-            // 3. 둘 다 없을 때
             setFormData(prev => ({
                 ...prev,
                 barcode: decodedText
@@ -179,8 +180,6 @@ export default function InventoryPage() {
             alert(`외부 데이터베이스에도 없는 제품입니다 (${decodedText}).\n제품명을 직접 입력해 주시면 다음부터는 자동으로 인식합니다!`);
         }
     }
-    
-    // 폼 열기
     if (!isFormOpen) {
         setIsFormOpen(true);
     }
@@ -197,279 +196,306 @@ export default function InventoryPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-xl font-bold tracking-tight">식재료 관리</h2>
-          <p className="text-zinc-400">냉장고와 펜트리의 재고를 관리하세요.</p>
+          <h2 className="text-xl font-bold tracking-tight">
+            {viewMode === 'INVENTORY' ? '식재료 관리' : '식재료 마스터 DB'}
+          </h2>
+          <p className="text-zinc-400">
+            {viewMode === 'INVENTORY' ? '냉장고와 펜트리의 재고를 관리하세요.' : '자주 사용하는 식재료 품목을 관리하세요.'}
+          </p>
         </div>
-        <div className="flex w-full gap-2 md:w-auto">
-            <button 
-                onClick={() => setIsScannerOpen(true)}
-                className="flex flex-1 items-center justify-center gap-2 rounded-sm border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm font-medium text-zinc-300 hover:bg-zinc-700 transition-colors md:flex-none md:py-2"
+        
+        <div className="flex bg-zinc-900 rounded-sm p-1 border border-zinc-800 self-start md:self-auto">
+            <button
+                onClick={() => setViewMode('INVENTORY')}
+                className={`px-4 py-1.5 text-xs font-bold rounded-sm transition-all ${viewMode === 'INVENTORY' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
             >
-                <QrCode size={18} />
-                <span>스캔</span>
+                내 냉장고
             </button>
-            <button 
-            onClick={() => {
-                resetForm(); 
-                setIsFormOpen(true);
-            }}
-            className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700 transition-colors md:flex-none md:py-2"
+            <button
+                onClick={() => setViewMode('MASTER')}
+                className={`px-4 py-1.5 text-xs font-bold rounded-sm transition-all ${viewMode === 'MASTER' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
             >
-            <Plus size={18} />
-            <span className="whitespace-nowrap">식재료 추가</span>
+                식재료 DB
             </button>
         </div>
       </div>
 
-      <div className="flex border-b border-zinc-800">
-        {(['FRIDGE', 'FREEZER', 'PANTRY'] as StorageType[]).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => {
-              setActiveTab(tab);
-              if (!editingItemId) {
-                  setFormData(prev => ({ ...prev, storageType: tab }));
-              }
-            }}
-            className={`px-6 py-3 text-sm font-medium transition-colors ${
-              activeTab === tab 
-                ? 'border-b-2 border-blue-500 text-blue-500' 
-                : 'text-zinc-400 hover:text-white'
-            }`}
-          >
-            {tab === 'FRIDGE' ? '냉장실' : tab === 'FREEZER' ? '냉동실' : '실온/펜트리'}
-          </button>
-        ))}
-      </div>
-
-      {isFormOpen && (
-        <div className="rounded-sm border border-zinc-800 bg-zinc-900/50 p-6 animate-in fade-in slide-in-from-top-4">
-          <div className="mb-4 flex items-center justify-between">
-            <h3 className="font-bold text-zinc-100">
-                {editingItemId ? '식재료 정보 수정' : '새 식재료 등록'}
-            </h3>
-            {editingItemId && (
-                <span className="text-xs text-blue-400">수정 중...</span>
-            )}
-          </div>
-          
-          <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-            {/* 1. Product Name */}
-            <div className="space-y-2">
-              <label className="flex items-center justify-between text-xs font-bold text-zinc-500 uppercase tracking-wider">
-                  <span>표준 품목명</span>
-                  <button 
-                      type="button" 
-                      onClick={() => {
-                          setQuickAddName(formData.name);
-                          setIsQuickAddOpen(true);
-                      }}
-                      className="text-[10px] text-blue-500 font-bold"
-                  >
-                      + 새 품목 등록
-                  </button>
-              </label>
-              <Autocomplete
-                options={products.map(p => p.name)}
-                placeholder="예: 우유, 양파..."
-                value={formData.name}
-                onChange={(val) => setFormData({ ...formData, name: val })}
-              />
+      {viewMode === 'INVENTORY' ? (
+        <>
+            <div className="flex justify-between items-center border-b border-zinc-800">
+                <div className="flex">
+                    {(['FRIDGE', 'FREEZER', 'PANTRY'] as StorageType[]).map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => {
+                        setActiveTab(tab);
+                        if (!editingItemId) {
+                            setFormData(prev => ({ ...prev, storageType: tab }));
+                        }
+                        }}
+                        className={`px-4 md:px-6 py-3 text-sm font-medium transition-colors ${
+                        activeTab === tab 
+                            ? 'border-b-2 border-blue-500 text-blue-500' 
+                            : 'text-zinc-400 hover:text-white'
+                        }`}
+                    >
+                        {tab === 'FRIDGE' ? '냉장실' : tab === 'FREEZER' ? '냉동실' : '실온/펜트리'}
+                    </button>
+                    ))}
+                </div>
+                <div className="flex gap-2 pb-2">
+                    <button 
+                        onClick={() => setIsScannerOpen(true)}
+                        className="flex items-center justify-center gap-2 rounded-sm border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-700 transition-colors"
+                    >
+                        <QrCode size={16} />
+                        <span className="hidden md:inline">스캔</span>
+                    </button>
+                    <button 
+                    onClick={() => {
+                        resetForm(); 
+                        setIsFormOpen(true);
+                    }}
+                    className="flex items-center justify-center gap-2 rounded-sm bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700 transition-colors"
+                    >
+                    <Plus size={16} />
+                    <span className="hidden md:inline">추가</span>
+                    </button>
+                </div>
             </div>
 
-            {/* 2. Detail & Memo */}
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">상세 제품명 / 메모</label>
-              <input
-                className="h-12 w-full rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500"
-                placeholder="예: 서울우유 1L (1+1)"
-                value={formData.detail}
-                onChange={e => setFormData({ ...formData, detail: e.target.value })}
-              />
-            </div>
+            {isFormOpen && (
+                <div className="rounded-sm border border-zinc-800 bg-zinc-900/50 p-6 animate-in fade-in slide-in-from-top-4">
+                <div className="mb-4 flex items-center justify-between">
+                    <h3 className="font-bold text-zinc-100">
+                        {editingItemId ? '식재료 정보 수정' : '새 식재료 등록'}
+                    </h3>
+                    {editingItemId && (
+                        <span className="text-xs text-blue-400">수정 중...</span>
+                    )}
+                </div>
+                
+                <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+                    {/* 1. Product Name */}
+                    <div className="space-y-2">
+                    <label className="flex items-center justify-between text-xs font-bold text-zinc-500 uppercase tracking-wider">
+                        <span>표준 품목명</span>
+                        <button 
+                            type="button" 
+                            onClick={() => {
+                                setQuickAddName(formData.name);
+                                setIsQuickAddOpen(true);
+                            }}
+                            className="text-[10px] text-blue-500 font-bold"
+                        >
+                            + 새 품목 등록
+                        </button>
+                    </label>
+                    <Autocomplete
+                        options={products.map(p => p.name)}
+                        placeholder="예: 우유, 양파..."
+                        value={formData.name}
+                        onChange={(val) => setFormData({ ...formData, name: val })}
+                    />
+                    </div>
 
-            {/* 3. Quantity & Unit */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">수량</label>
-                <input
-                    type="number"
-                    min="0"
-                    className="h-12 w-full rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500"
-                    value={formData.quantityNum}
-                    onChange={e => setFormData({ ...formData, quantityNum: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">단위</label>
-                <select
-                    className="h-12 w-full rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500"
-                    value={formData.quantityUnit}
-                    onChange={e => setFormData({ ...formData, quantityUnit: e.target.value })}
-                >
-                    <option value="개">개</option>
-                    <option value="팩">팩</option>
-                    <option value="봉">봉</option>
-                    <option value="Box">Box</option>
-                    <option value="kg">kg</option>
-                    <option value="g">g</option>
-                    <option value="L">L</option>
-                    <option value="ml">ml</option>
-                    <option value="캔">캔</option>
-                    <option value="병">병</option>
-                </select>
-              </div>
-            </div>
+                    {/* 2. Detail & Memo */}
+                    <div className="space-y-2">
+                    <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">상세 제품명 / 메모</label>
+                    <input
+                        className="h-12 w-full rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500"
+                        placeholder="예: 서울우유 1L (1+1)"
+                        value={formData.detail}
+                        onChange={e => setFormData({ ...formData, detail: e.target.value })}
+                    />
+                    </div>
 
-            {/* 4. Storage & Expiry */}
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">보관 장소</label>
-                <select
-                  className="h-12 w-full rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500"
-                  value={formData.storageType}
-                  onChange={e => setFormData({ ...formData, storageType: e.target.value as StorageType })}
-                >
-                    <option value="FRIDGE">냉장실</option>
-                    <option value="FREEZER">냉동실</option>
-                    <option value="PANTRY">실온/펜트리</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">소비기한</label>
-                <input
-                  type="date"
-                  className="h-12 w-full rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500"
-                  value={formData.expiryDate}
-                  onChange={e => setFormData({ ...formData, expiryDate: e.target.value })}
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-6 pt-6 border-t border-zinc-800">
-                {/* Meta Info */}
-                <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                        <label className="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest">등록일</label>
+                    {/* 3. Quantity & Unit */}
+                    <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">수량</label>
                         <input
-                            type="date"
-                            className="bg-transparent text-xs text-zinc-400 outline-none focus:text-blue-500"
-                            value={formData.registeredAt}
-                            onChange={e => setFormData({ ...formData, registeredAt: e.target.value })}
+                            type="number"
+                            min="0"
+                            className="h-12 w-full rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500"
+                            value={formData.quantityNum}
+                            onChange={e => setFormData({ ...formData, quantityNum: e.target.value })}
                         />
                     </div>
-                    
-                    <div className="text-right">
-                        {formData.barcode ? (
-                            <div className="inline-flex items-center gap-2 text-blue-500 bg-blue-500/10 px-3 py-1.5 rounded-full border border-blue-500/20">
-                                <Barcode size={14} />
-                                <span className="text-[11px] font-mono font-bold">{formData.barcode}</span>
-                                <button type="button" onClick={() => setFormData({...formData, barcode: ''})} className="hover:text-red-500"><X size={14}/></button>
-                            </div>
-                        ) : (
-                            <button type="button" onClick={() => setIsScannerOpen(true)} className="flex items-center gap-2 text-zinc-500 hover:text-blue-500 transition-colors text-xs font-bold">
-                                <QrCode size={16} />
-                                <span>스캔 연결됨</span>
-                            </button>
-                        )}
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">단위</label>
+                        <select
+                            className="h-12 w-full rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500"
+                            value={formData.quantityUnit}
+                            onChange={e => setFormData({ ...formData, quantityUnit: e.target.value })}
+                        >
+                            <option value="개">개</option>
+                            <option value="팩">팩</option>
+                            <option value="봉">봉</option>
+                            <option value="Box">Box</option>
+                            <option value="kg">kg</option>
+                            <option value="g">g</option>
+                            <option value="L">L</option>
+                            <option value="ml">ml</option>
+                            <option value="캔">캔</option>
+                            <option value="병">병</option>
+                        </select>
                     </div>
-                </div>
+                    </div>
 
-                {/* Main Buttons */}
-                <div className="flex gap-3">
-                    <button
-                        type="button"
-                        onClick={resetForm}
-                        className="flex-1 h-14 rounded-sm border border-zinc-800 bg-zinc-900 text-sm font-bold text-zinc-400 active:bg-zinc-800"
-                    >
-                        취소
-                    </button>
-                    <button
-                        type="submit"
-                        className="flex-[2] h-14 rounded-sm bg-blue-600 text-sm font-black text-white active:bg-blue-700 shadow-xl shadow-blue-900/20"
-                    >
-                        {editingItemId ? '정보 수정' : '식재료 등록'}
-                    </button>
+                    {/* 4. Storage & Expiry */}
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">보관 장소</label>
+                        <select
+                        className="h-12 w-full rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500"
+                        value={formData.storageType}
+                        onChange={e => setFormData({ ...formData, storageType: e.target.value as StorageType })}
+                        >
+                            <option value="FRIDGE">냉장실</option>
+                            <option value="FREEZER">냉동실</option>
+                            <option value="PANTRY">실온/펜트리</option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">소비기한</label>
+                        <input
+                        type="date"
+                        className="h-12 w-full rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500"
+                        value={formData.expiryDate}
+                        onChange={e => setFormData({ ...formData, expiryDate: e.target.value })}
+                        />
+                    </div>
+                    </div>
+                    
+                    <div className="space-y-6 pt-6 border-t border-zinc-800">
+                        {/* Meta Info */}
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <label className="block text-[10px] font-bold text-zinc-600 uppercase tracking-widest">등록일</label>
+                                <input
+                                    type="date"
+                                    className="bg-transparent text-xs text-zinc-400 outline-none focus:text-blue-500"
+                                    value={formData.registeredAt}
+                                    onChange={e => setFormData({ ...formData, registeredAt: e.target.value })}
+                                />
+                            </div>
+                            
+                            <div className="text-right">
+                                {formData.barcode ? (
+                                    <div className="inline-flex items-center gap-2 text-blue-500 bg-blue-500/10 px-3 py-1.5 rounded-full border border-blue-500/20">
+                                        <Barcode size={14} />
+                                        <span className="text-[11px] font-mono font-bold">{formData.barcode}</span>
+                                        <button type="button" onClick={() => setFormData({...formData, barcode: ''})} className="hover:text-red-500"><X size={14}/></button>
+                                    </div>
+                                ) : (
+                                    <button type="button" onClick={() => setIsScannerOpen(true)} className="flex items-center gap-2 text-zinc-500 hover:text-blue-500 transition-colors text-xs font-bold">
+                                        <QrCode size={16} />
+                                        <span>스캔 연결됨</span>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Main Buttons */}
+                        <div className="flex gap-3">
+                            <button
+                                type="button"
+                                onClick={resetForm}
+                                className="flex-1 h-14 rounded-sm border border-zinc-800 bg-zinc-900 text-sm font-bold text-zinc-400 active:bg-zinc-800"
+                            >
+                                취소
+                            </button>
+                            <button
+                                type="submit"
+                                className="flex-[2] h-14 rounded-sm bg-blue-600 text-sm font-black text-white active:bg-blue-700 shadow-xl shadow-blue-900/20"
+                            >
+                                {editingItemId ? '정보 수정' : '식재료 등록'}
+                            </button>
+                        </div>
+                    </div>
+                </form>
                 </div>
+            )}
+
+            {/* Item List */}
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {filteredItems.length > 0 ? (
+                filteredItems.map((item) => (
+                    <div key={item.id} className="group relative rounded-sm border border-zinc-800 bg-zinc-900/30 p-4 transition-colors hover:bg-zinc-900/60">
+                    <div className="mb-2 flex items-start justify-between">
+                        <div>
+                        <h4 className="font-bold">{item.name}</h4>
+                        {item.detail && (
+                            <p className="text-xs text-zinc-400 mt-0.5">{item.detail}</p>
+                        )}
+                        <p className="text-xs text-zinc-500 mt-1">{item.quantity || '-'}</p>
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <button 
+                                onClick={() => handleEditClick(item)}
+                                className="rounded-sm p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-blue-500"
+                                title="수정"
+                            >
+                                <Pencil size={14} />
+                            </button>
+                            <button 
+                                onClick={() => deleteItem(item.id)}
+                                className="rounded-sm p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-red-500"
+                                title="삭제"
+                            >
+                                <Trash2 size={14} />
+                            </button>
+                        </div>
+                    </div>
+                    <div className="mt-4 flex items-center justify-between border-t border-zinc-800 pt-3">
+                        <div className="flex items-center gap-1 text-xs text-zinc-500">
+                        <span>소비기한:</span>
+                        <span>{item.expiryDate}</span>
+                        </div>
+                        <div className="text-xs">
+                        {getDDay(item.expiryDate)}
+                        </div>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between text-[10px] text-zinc-600">
+                        <span>등록일: {format(new Date(item.registeredAt), 'yyyy-MM-dd')}</span>
+                        {item.barcode && <Barcode size={12} className="opacity-50" />}
+                    </div>
+                    </div>
+                ))
+                ) : (
+                <div className="col-span-full py-20 text-center">
+                    <p className="text-zinc-500">이곳은 비어있습니다. 새로운 식재료를 추가해보세요.</p>
+                </div>
+                )}
             </div>
-          </form>
-        </div>
-      )}
 
-      {/* Item List */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredItems.length > 0 ? (
-          filteredItems.map((item) => (
-            <div key={item.id} className="group relative rounded-sm border border-zinc-800 bg-zinc-900/30 p-4 transition-colors hover:bg-zinc-900/60">
-              <div className="mb-2 flex items-start justify-between">
-                <div>
-                  <h4 className="font-bold">{item.name}</h4>
-                  {item.detail && (
-                      <p className="text-xs text-zinc-400 mt-0.5">{item.detail}</p>
-                  )}
-                  <p className="text-xs text-zinc-500 mt-1">{item.quantity || '-'}</p>
-                </div>
-                <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <button 
-                        onClick={() => handleEditClick(item)}
-                        className="rounded-sm p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-blue-500"
-                        title="수정"
-                    >
-                        <Pencil size={14} />
-                    </button>
-                    <button 
-                        onClick={() => deleteItem(item.id)}
-                        className="rounded-sm p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-red-500"
-                        title="삭제"
-                    >
-                        <Trash2 size={14} />
-                    </button>
-                </div>
-              </div>
-              <div className="mt-4 flex items-center justify-between border-t border-zinc-800 pt-3">
-                <div className="flex items-center gap-1 text-xs text-zinc-500">
-                  <span>소비기한:</span>
-                  <span>{item.expiryDate}</span>
-                </div>
-                <div className="text-xs">
-                  {getDDay(item.expiryDate)}
-                </div>
-              </div>
-              <div className="mt-1 flex items-center justify-between text-[10px] text-zinc-600">
-                <span>등록일: {format(new Date(item.registeredAt), 'yyyy-MM-dd')}</span>
-                {item.barcode && <Barcode size={12} className="opacity-50" />}
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className="col-span-full py-20 text-center">
-            <p className="text-zinc-500">이곳은 비어있습니다. 새로운 식재료를 추가해보세요.</p>
-          </div>
-        )}
-      </div>
-
-      {/* Quick Add Modal */}
-      <QuickProductAddModal
-        isOpen={isQuickAddOpen}
-        onClose={() => setIsQuickAddOpen(false)}
-        initialName={quickAddName}
-        onSuccess={(newName) => setFormData(prev => ({ ...prev, name: newName }))}
-      />
-      
-      {/* Barcode Scanner */}
-      {isScannerOpen && (
-        <BarcodeScanner 
-            onScanSuccess={handleScanSuccess}
-            onClose={() => setIsScannerOpen(false)}
-            onManualInput={() => {
-                setIsScannerOpen(false);
-                const barcode = prompt("바코드 번호를 입력하세요:");
-                if (barcode) {
-                    handleScanSuccess(barcode);
-                }
-            }}
-        />
+            {/* Quick Add Modal */}
+            <QuickProductAddModal
+                isOpen={isQuickAddOpen}
+                onClose={() => setIsQuickAddOpen(false)}
+                initialName={quickAddName}
+                onSuccess={(newName) => setFormData(prev => ({ ...prev, name: newName }))}
+            />
+            
+            {/* Barcode Scanner */}
+            {isScannerOpen && (
+                <BarcodeScanner 
+                    onScanSuccess={handleScanSuccess}
+                    onClose={() => setIsScannerOpen(false)}
+                    onManualInput={() => {
+                        setIsScannerOpen(false);
+                        const barcode = prompt("바코드 번호를 입력하세요:");
+                        if (barcode) {
+                            handleScanSuccess(barcode);
+                        }
+                    }}
+                />
+            )}
+        </>
+      ) : (
+        <ProductList />
       )}
     </div>
   );
