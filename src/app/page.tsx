@@ -207,7 +207,9 @@ function ExpiringItemRow({ item, today }: { item: any, today: Date }) {
         <div className={`flex items-center justify-between rounded-lg p-3 border transition-all hover:scale-[1.02] ${getStatusStyles()}`}>
             <div className="overflow-hidden">
                 <p className="font-bold text-sm truncate">{item.name}</p>
-                <p className="text-[10px] opacity-60 truncate">{item.detail || '-'}</p>
+                <p className="text-[10px] opacity-60 truncate min-h-[1.2em]">
+                    {item.detail?.trim() || '\u00A0'}
+                </p>
             </div>
             <div className="text-right ml-4">
                 <span className="text-[11px] font-black whitespace-nowrap">
