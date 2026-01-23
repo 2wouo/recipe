@@ -24,20 +24,25 @@ export const useProductStore = create<ProductState>((set, get) => ({
 
   addProduct: async (product) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+        alert('로그인이 필요합니다.');
+        return;
+    }
 
     const { error } = await supabase.from('products').insert({
-        id: product.id,
-        name: product.name,
-        category: product.category,
-        barcodes: product.barcodes || [],
-        user_id: user.id
+      id: product.id,
+      name: product.name,
+      category: product.category,
+      barcodes: product.barcodes,
+      user_id: user.id
     });
 
     if (error) {
-        console.error('Error adding product:', error);
-        return;
+      console.error('Error adding product:', error);
+      alert('마스터 데이터 등록 실패: ' + error.message);
+      return;
     }
+
     set((state) => ({ products: [...state.products, product] }));
   },
 

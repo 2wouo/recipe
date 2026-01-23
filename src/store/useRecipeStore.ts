@@ -40,7 +40,10 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
 
   addRecipe: async (recipe) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+        alert('로그인이 필요합니다.');
+        return;
+    }
 
     const { error } = await supabase.from('recipes').insert({
       id: recipe.id,
@@ -53,6 +56,7 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
 
     if (error) {
       console.error('Error adding recipe:', error);
+      alert('레시피 등록 실패: ' + error.message);
       return;
     }
 

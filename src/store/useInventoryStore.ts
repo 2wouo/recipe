@@ -41,28 +41,29 @@ export const useInventoryStore = create<InventoryState>((set) => ({
 
   addItem: async (item) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+        alert('로그인이 필요합니다.');
+        return;
+    }
 
-    // 1. DB에 저장
     const { error } = await supabase.from('inventory').insert({
       id: item.id,
       name: item.name,
       detail: item.detail,
-      storage_type: item.storageType,
+      storage_type: item.storageType, // DB column name might be 'storage_type'
       quantity: item.quantity,
-      expiry_date: item.expiryDate,
-      registered_at: item.registeredAt,
+      expiry_date: item.expiryDate, // DB column name might be 'expiry_date'
+      registered_at: item.registeredAt, // DB column name might be 'registered_at'
       barcode: item.barcode,
       user_id: user.id
     });
 
     if (error) {
       console.error('Error adding item:', error);
-      alert('저장 중 오류가 발생했습니다.');
+      alert('데이터 등록 실패: ' + error.message);
       return;
     }
 
-    // 2. 상태 업데이트 (새로고침 없이 반영)
     set((state) => ({ items: [...state.items, item] }));
   },
 
