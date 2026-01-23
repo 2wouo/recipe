@@ -58,8 +58,10 @@ export default function LoginPage() {
                 <input
                   type="text"
                   name="username"
-                  placeholder="아이디"
+                  placeholder="아이디 (영문, 숫자)"
                   required
+                  pattern="[a-zA-Z0-9_]+"
+                  title="영문, 숫자, 언더바(_)만 입력 가능합니다"
                   className="w-full rounded-sm border border-zinc-800 bg-zinc-900 py-3 pl-10 pr-4 text-sm text-white outline-none focus:border-blue-500 placeholder:text-zinc-600 transition-colors"
                 />
               </div>
@@ -108,8 +110,10 @@ export default function LoginPage() {
                 <input
                   type="text"
                   name="username"
-                  placeholder="사용할 아이디"
+                  placeholder="사용할 아이디 (영문, 숫자)"
                   required
+                  pattern="[a-zA-Z0-9_]+"
+                  title="영문, 숫자, 언더바(_)만 입력 가능합니다"
                   className="w-full rounded-sm border border-zinc-800 bg-zinc-900 py-3 pl-10 pr-4 text-sm text-white outline-none focus:border-blue-500 placeholder:text-zinc-600 transition-colors"
                 />
               </div>

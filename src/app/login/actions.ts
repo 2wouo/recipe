@@ -10,7 +10,7 @@ export type ActionState = {
 }
 
 // 내부적으로 사용할 도메인 (사용자는 몰라도 됨)
-const INTERNAL_DOMAIN = 'recipe-user.com';
+const INTERNAL_DOMAIN = 'example.com';
 
 function createEmailFromId(id: string) {
   // 이미 이메일 형식이면 그대로 사용, 아니면 도메인 붙이기
@@ -20,8 +20,9 @@ function createEmailFromId(id: string) {
 export async function login(prevState: ActionState, formData: FormData): Promise<ActionState> {
   const supabase = await createClient()
 
-  // 사용자가 입력한 ID (또는 이메일)
-  const userId = formData.get('username') as string
+  // 사용자가 입력한 ID (또는 이메일) - 공백 제거
+  const rawId = formData.get('username') as string
+  const userId = rawId ? rawId.trim() : ''
   const password = formData.get('password') as string
 
   const email = createEmailFromId(userId);
