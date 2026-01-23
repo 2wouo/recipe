@@ -2,13 +2,14 @@
 
 import { useEffect } from 'react';
 import { useAuthStore } from '@/store/useAuthStore';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 import { usePathname, useRouter } from 'next/navigation';
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const { setUser, user, loading, checkUser } = useAuthStore();
   const router = useRouter();
   const pathname = usePathname();
+  const supabase = createClient();
 
   useEffect(() => {
     const initAuth = async () => {
@@ -29,6 +30,9 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     return () => subscription.unsubscribe();
   }, [checkUser, setUser]);
 
+  // Client-side redirection disabled to prevent loops.
+  // Access control is managed by server-side middleware (if enabled) or RLS policies.
+  /*
   useEffect(() => {
     console.log('Auth Status - User:', !!user, 'Loading:', loading, 'Path:', pathname);
     if (!loading) {
@@ -41,7 +45,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       }
     }
   }, [user, loading, pathname, router]);
+  */
 
+  // Allow rendering even if loading or not logged in
+  /*
   if (loading && pathname !== '/login') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
@@ -50,10 +57,10 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     );
   }
 
-  // 비로그인 상태에서 로그인 페이지가 아닌 곳에 접근하려 할 때, 아무것도 렌더링하지 않고 리다이렉트 대기
   if (!user && pathname !== '/login') {
     return null;
   }
+  */
 
   return <>{children}</>;
 }
