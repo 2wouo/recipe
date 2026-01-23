@@ -34,10 +34,21 @@ export async function signup(prevState: ActionState, formData: FormData): Promis
 
   const email = formData.get('email') as string
   const password = formData.get('password') as string
+  const username = formData.get('username') as string
+
+  if (!username) {
+    return { error: '닉네임을 입력해주세요.', success: false, message: null }
+  }
 
   const { error, data } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        display_name: username,
+        username,
+      },
+    },
   })
 
   if (error) {

@@ -2,7 +2,7 @@
 
 import { login, signup, type ActionState } from './actions'
 import { useActionState, useState, useEffect } from 'react'
-import { ChefHat, Loader2, Mail, Lock, ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { ChefHat, Loader2, Mail, Lock, ArrowLeft, CheckCircle2, User } from 'lucide-react'
 
 const initialState: ActionState = {
   error: null,
@@ -117,11 +117,21 @@ export default function LoginPage() {
           <form action={signupAction} className="mt-8 space-y-4 animate-in fade-in slide-in-from-left-8 duration-300">
              <div className="space-y-4">
               <div className="relative group">
+                <User className="absolute left-3 top-3 text-zinc-500 group-focus-within:text-blue-500 transition-colors" size={18} />
+                <input
+                  type="text"
+                  name="username"
+                  placeholder="닉네임 (아이디)"
+                  required
+                  className="w-full rounded-sm border border-zinc-800 bg-zinc-900 py-3 pl-10 pr-4 text-sm text-white outline-none focus:border-blue-500 placeholder:text-zinc-600 transition-colors"
+                />
+              </div>
+              <div className="relative group">
                 <Mail className="absolute left-3 top-3 text-zinc-500 group-focus-within:text-blue-500 transition-colors" size={18} />
                 <input
                   type="email"
                   name="email"
-                  placeholder="이메일 주소"
+                  placeholder="이메일 주소 (로그인 및 찾기용)"
                   required
                   className="w-full rounded-sm border border-zinc-800 bg-zinc-900 py-3 pl-10 pr-4 text-sm text-white outline-none focus:border-blue-500 placeholder:text-zinc-600 transition-colors"
                 />
