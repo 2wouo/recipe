@@ -28,28 +28,29 @@ export default function RecipeDetailModal({ recipe, onClose }: RecipeDetailModal
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 px-4 backdrop-blur-md overflow-y-auto pt-10 pb-10">
       <div className="w-full max-w-2xl rounded-sm border border-zinc-800 bg-zinc-950 p-8 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300 relative my-auto">
-        <button onClick={onClose} className="absolute right-6 top-6 text-zinc-500 hover:text-white">
+        <div className="flex justify-between items-start mb-2 pr-10">
+            <div className="flex items-center gap-2 text-blue-500 text-xs font-bold uppercase tracking-widest">
+                <ChefHat size={14} />
+                Community Recipe
+            </div>
+            <div className="flex items-center gap-4 text-xs text-zinc-500">
+                <span className="flex items-center gap-1.5"><Eye size={14}/>{recipe.views_count}</span>
+                <button 
+                    onClick={handleLike}
+                    className="flex items-center gap-1.5 hover:text-pink-500 transition-colors group"
+                >
+                    <Heart size={14} className="group-active:scale-125 transition-transform" />
+                    {recipe.likes_count}
+                </button>
+            </div>
+        </div>
+
+        <button onClick={onClose} className="absolute right-6 top-6 text-zinc-500 hover:text-white transition-colors z-10">
           <X size={28} />
         </button>
 
         <div className="mb-8">
-            <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2 text-blue-500 text-xs font-bold uppercase tracking-widest">
-                    <ChefHat size={14} />
-                    Community Recipe
-                </div>
-                <div className="flex items-center gap-4 text-xs text-zinc-500">
-                    <span className="flex items-center gap-1.5"><Eye size={14}/>{recipe.views_count}</span>
-                    <button 
-                        onClick={handleLike}
-                        className="flex items-center gap-1.5 hover:text-pink-500 transition-colors group"
-                    >
-                        <Heart size={14} className="group-active:scale-125 transition-transform" />
-                        {recipe.likes_count}
-                    </button>
-                </div>
-            </div>
-            <h2 className="text-3xl font-black text-white leading-tight">{recipe.title}</h2>
+            <h2 className="text-3xl font-black text-white leading-tight pr-10">{recipe.title}</h2>
             <div className="mt-4 flex items-center gap-4 text-sm text-zinc-500">
                 <span className="flex items-center gap-1.5">
                     <div className="h-5 w-5 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden border border-zinc-700">
