@@ -7,9 +7,8 @@ import Autocomplete from '@/components/ui/Autocomplete';
 
 // Default categories
 const DEFAULT_CATEGORIES = [
-  '유제품', '육류', '수산물', '채소', '과일', 
-  '곡류', '견과류', '양념/소스', '가공식품', '냉동식품', 
-  '반찬', '음료', '기타'
+  '채소', '과일', '육류', '수산물', '유제품/계란', 
+  '곡류/면류', '양념/소스', '가공/냉동', '음료/간식', '기타'
 ];
 
 export default function ProductList() {
