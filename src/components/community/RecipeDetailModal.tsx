@@ -12,9 +12,15 @@ interface RecipeDetailModalProps {
   onClose: () => void;
 }
 
-export default function RecipeDetailModal({ recipe, onClose }: RecipeDetailModalProps) {
+export default function RecipeDetailModal({ recipe: initialRecipe, onClose }: RecipeDetailModalProps) {
   const { importRecipe } = useRecipeStore();
-  const { toggleLike } = useCommunityStore();
+  const { communityRecipes, myCommunityRecipes, likedRecipes, toggleLike } = useCommunityStore();
+
+  // Find the most up-to-date version of this recipe from the store
+  const recipe = communityRecipes.find(r => r.id === initialRecipe.id) || 
+                 myCommunityRecipes.find(r => r.id === initialRecipe.id) ||
+                 likedRecipes.find(r => r.id === initialRecipe.id) ||
+                 initialRecipe;
 
   const handleImport = async () => {
     await importRecipe(recipe);
