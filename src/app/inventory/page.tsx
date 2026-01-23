@@ -13,7 +13,7 @@ import Autocomplete from '@/components/ui/Autocomplete';
 
 export default function InventoryPage() {
   const { items, addItem, updateItem, deleteItem, fetchItems } = useInventoryStore();
-  const { products, fetchProducts } = useProductStore();
+  const { products, fetchProducts, addProduct } = useProductStore();
   const [activeTab, setActiveTab] = useState<StorageType>('FRIDGE');
 
   // Load data on mount
