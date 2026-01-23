@@ -2,6 +2,7 @@
 
 import { login, signup, type ActionState } from './actions'
 import { useActionState, useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { ChefHat, Loader2, Mail, Lock, ArrowLeft, CheckCircle2, User } from 'lucide-react'
 
 const initialState: ActionState = {
@@ -11,6 +12,7 @@ const initialState: ActionState = {
 }
 
 export default function LoginPage() {
+  const router = useRouter();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   
   // Login Action State
@@ -18,6 +20,14 @@ export default function LoginPage() {
   
   // Signup Action State
   const [signupState, signupAction, isSignupPending] = useActionState(signup, initialState);
+
+  // Handle successful login
+  useEffect(() => {
+    if (loginState.success && mode === 'login') {
+      router.refresh(); // Update server components with new session
+      router.push('/'); // Navigate to home
+    }
+  }, [loginState.success, mode, router]);
 
   // Reset states when switching modes
   useEffect(() => {
