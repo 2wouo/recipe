@@ -55,3 +55,12 @@ export interface CommunityRecipe {
   created_at: string;
   likes_count: number;
 }
+
+export interface Comment {
+  id: string;
+  recipe_id: string;
+  user_id: string;
+  user_name: string;
+  content: string;
+  created_at: string;
+}

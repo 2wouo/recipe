@@ -3,13 +3,16 @@
 import { useEffect, useState } from 'react';
 import { useCommunityStore } from '@/store/useCommunityStore';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useRecipeStore } from '@/store/useRecipeStore';
 import { Search, Heart, User, Clock, Trash2, BookOpen, ChevronRight, X, ChefHat, ExternalLink, Pencil } from 'lucide-react';
 import { format } from 'date-fns';
 import { CommunityRecipe, Recipe } from '@/types';
 import PublishModal from '@/components/community/PublishModal';
+import CommentSection from '@/components/community/CommentSection';
 
 export default function CommunityPage() {
   const { communityRecipes, myCommunityRecipes, loading, fetchCommunityRecipes, fetchMyCommunityRecipes, deleteCommunityRecipe } = useCommunityStore();
+  const { importRecipe } = useRecipeStore();
   const { user } = useAuthStore();
   const [activeTab, setActiveTab] = useState<'all' | 'mine'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -36,6 +39,11 @@ export default function CommunityPage() {
   const handleEdit = (recipe: CommunityRecipe, e: React.MouseEvent) => {
       e.stopPropagation();
       setRecipeToEdit(recipe);
+  };
+
+  const handleImport = async (recipe: CommunityRecipe) => {
+      await importRecipe(recipe);
+      setSelectedRecipe(null);
   };
 
   const recipesToShow = activeTab === 'all' ? communityRecipes : myCommunityRecipes;
@@ -231,13 +239,15 @@ export default function CommunityPage() {
 
             <div className="mt-12 flex gap-4">
                 <button 
-                    onClick={() => alert('내 보관함으로 가져오기 기능은 준비 중입니다.')}
+                    onClick={() => handleImport(selectedRecipe)}
                     className="flex-1 h-14 rounded-sm bg-blue-600 text-white font-black hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-xl shadow-blue-900/20"
                 >
                     <BookOpen size={20} />
                     내 보관함에 담기
                 </button>
             </div>
+
+            <CommentSection recipeId={selectedRecipe.id} />
           </div>
         </div>
       )}

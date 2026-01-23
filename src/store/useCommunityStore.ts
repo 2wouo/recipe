@@ -1,11 +1,12 @@
 import { create } from 'zustand';
-import { CommunityRecipe } from '@/types';
+import { CommunityRecipe, Comment } from '@/types';
 import { createClient } from '@/utils/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
 
 interface CommunityState {
   communityRecipes: CommunityRecipe[];
   myCommunityRecipes: CommunityRecipe[];
+  comments: Comment[];
   loading: boolean;
   
   fetchCommunityRecipes: (searchQuery?: string) => Promise<void>;
@@ -14,14 +15,70 @@ interface CommunityState {
   updateCommunityRecipe: (id: string, updates: Partial<Omit<CommunityRecipe, 'id' | 'created_at' | 'likes_count' | 'author_id'>>) => Promise<{ success: boolean; error?: string }>;
   deleteCommunityRecipe: (id: string) => Promise<void>;
   toggleLike: (id: string) => Promise<void>;
+  
+  fetchComments: (recipeId: string) => Promise<void>;
+  addComment: (recipeId: string, content: string) => Promise<void>;
+  deleteComment: (commentId: string) => Promise<void>;
 }
 
 export const useCommunityStore = create<CommunityState>((set, get) => ({
   communityRecipes: [],
   myCommunityRecipes: [],
+  comments: [],
   loading: false,
 
-  // ... (fetch functions remain same)
+  fetchComments: async (recipeId) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('recipe_id', recipeId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching comments:', error);
+      return;
+    }
+    
+    set({ comments: data as Comment[] });
+  },
+
+  addComment: async (recipeId, content) => {
+    const supabase = createClient();
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('comments')
+      .insert({
+        recipe_id: recipeId,
+        user_id: user.id,
+        user_name: user.user_metadata?.display_name || user.email?.split('@')[0] || '익명',
+        content
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding comment:', error);
+      alert('댓글 등록 실패: ' + error.message);
+      return;
+    }
+
+    set(state => ({ comments: [...state.comments, data as Comment] }));
+  },
+
+  deleteComment: async (commentId) => {
+    const supabase = createClient();
+    const { error } = await supabase.from('comments').delete().eq('id', commentId);
+
+    if (error) {
+      console.error('Error deleting comment:', error);
+      return;
+    }
+
+    set(state => ({ comments: state.comments.filter(c => c.id !== commentId) }));
+  },
 
   fetchCommunityRecipes: async (searchQuery) => {
     set({ loading: true });

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Recipe, RecipeVersion } from '@/types';
+import { Recipe, RecipeVersion, CommunityRecipe } from '@/types';
 import { createClient } from '@/utils/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -13,6 +13,7 @@ interface RecipeState {
   deleteVersion: (recipeId: string, versionIndex: number) => Promise<void>;
   setPrimaryVersion: (recipeId: string, version: string) => Promise<void>;
   deleteRecipe: (id: string) => Promise<void>;
+  importRecipe: (communityRecipe: CommunityRecipe) => Promise<void>;
 }
 
 export const useRecipeStore = create<RecipeState>((set, get) => ({
@@ -224,5 +225,48 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
     set((state) => ({
       recipes: state.recipes.filter((recipe) => recipe.id !== id),
     }));
+  },
+
+  importRecipe: async (communityRecipe) => {
+    const supabase = createClient();
+    const user = useAuthStore.getState().user;
+    
+    if (!user) {
+        alert('로그인이 필요합니다.');
+        return;
+    }
+
+    const newRecipe: Recipe = {
+        id: crypto.randomUUID(),
+        title: communityRecipe.title,
+        description: communityRecipe.description,
+        currentVersion: '1.0',
+        versions: [{
+            version: '1.0',
+            ingredients: communityRecipe.ingredients,
+            steps: communityRecipe.steps,
+            notes: `커뮤니티에서 가져옴 (원본 작성자: ${communityRecipe.author_name})`,
+            createdAt: new Date().toISOString()
+        }],
+        user_id: user.id
+    };
+
+    const { error } = await supabase.from('recipes').insert({
+        id: newRecipe.id,
+        title: newRecipe.title,
+        description: newRecipe.description,
+        current_version: newRecipe.currentVersion,
+        versions: newRecipe.versions,
+        user_id: user.id,
+    });
+
+    if (error) {
+        console.error('Error importing recipe:', error);
+        alert('레시피 가져오기 실패: ' + error.message);
+        return;
+    }
+
+    set((state) => ({ recipes: [newRecipe, ...state.recipes] }));
+    alert('레시피를 내 보관함에 담았습니다!');
   },
 }));
