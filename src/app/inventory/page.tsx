@@ -344,7 +344,7 @@ export default function InventoryPage() {
                     <div className="space-y-2">
                         <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">단위</label>
                         <select
-                            className="h-12 w-full rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500"
+                            className="h-12 w-full rounded-sm border border-zinc-800 bg-black pl-4 pr-4 text-sm outline-none focus:border-blue-500 appearance-none"
                             value={formData.quantityUnit}
                             onChange={e => setFormData({ ...formData, quantityUnit: e.target.value })}
                         >
@@ -367,7 +367,7 @@ export default function InventoryPage() {
                     <div className="space-y-2">
                         <label className="text-xs font-bold text-zinc-500 uppercase tracking-wider">보관 장소</label>
                         <select
-                        className="h-12 w-full rounded-sm border border-zinc-800 bg-black px-4 text-sm outline-none focus:border-blue-500"
+                        className="h-12 w-full rounded-sm border border-zinc-800 bg-black pl-4 pr-4 text-sm outline-none focus:border-blue-500 appearance-none"
                         value={formData.storageType}
                         onChange={e => setFormData({ ...formData, storageType: e.target.value as StorageType })}
                         >
