@@ -51,6 +51,10 @@ function RecipesContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchScope, setSearchScope] = useState<'current' | 'all'>('current');
 
+  // Quick Add Modal State
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [quickAddName, setQuickAddName] = useState('');
+
   const filteredRecipes = recipes.filter(recipe => {
     const query = searchQuery.toLowerCase();
     
