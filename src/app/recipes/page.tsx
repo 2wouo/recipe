@@ -54,7 +54,7 @@ function RecipesContent() {
   
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchScope, setSearchScope] = useState<'current' | 'all'>('current');
+  const [filterType, setFilterType] = useState<'mine' | 'imported'>('mine');
 
   // Quick Add Modal State
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
@@ -62,29 +62,15 @@ function RecipesContent() {
 
   const filteredRecipes = recipes.filter(recipe => {
     const query = searchQuery.toLowerCase();
+    const matchesSearch = recipe.title.toLowerCase().includes(query);
     
-    // 1. Title search (Always check title)
-    if (recipe.title.toLowerCase().includes(query)) return true;
+    if (!matchesSearch) return false;
 
-    // 2. Ingredient & Note search
-    if (searchScope === 'current') {
-      // Search only in Representative Version
-      const currentVer = recipe.versions.find(v => v.version === recipe.currentVersion);
-      if (currentVer) {
-        return currentVer.ingredients.some(ing => ing.name.toLowerCase().includes(query)) ||
-               currentVer.notes.toLowerCase().includes(query) || 
-               (currentVer.memo && currentVer.memo.toLowerCase().includes(query));
-      }
+    if (filterType === 'mine') {
+        return !recipe.source_author;
     } else {
-      // Search in ALL versions
-      return recipe.versions.some(v => 
-        v.ingredients.some(ing => ing.name.toLowerCase().includes(query)) ||
-        v.notes.toLowerCase().includes(query) ||
-        (v.memo && v.memo.toLowerCase().includes(query))
-      );
+        return !!recipe.source_author;
     }
-
-    return false;
   });
   
   // New Version State
@@ -299,16 +285,16 @@ function RecipesContent() {
           </div>
           <div className="flex gap-1 p-1 bg-zinc-900/50 rounded-sm border border-zinc-800">
             <button 
-              onClick={() => setSearchScope('current')}
-              className={`flex-1 rounded-sm py-1 text-xs font-medium transition-colors ${searchScope === 'current' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
+              onClick={() => setFilterType('mine')}
+              className={`flex-1 rounded-sm py-1 text-xs font-medium transition-colors ${filterType === 'mine' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
             >
-              대표 버전
+              내 레시피
             </button>
             <button 
-              onClick={() => setSearchScope('all')}
-              className={`flex-1 rounded-sm py-1 text-xs font-medium transition-colors ${searchScope === 'all' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
+              onClick={() => setFilterType('imported')}
+              className={`flex-1 rounded-sm py-1 text-xs font-medium transition-colors ${filterType === 'imported' ? 'bg-zinc-700 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300'}`}
             >
-              전체 버전
+              가져온 레시피
             </button>
           </div>
         </div>
@@ -325,55 +311,22 @@ function RecipesContent() {
         <div className="flex-1 space-y-2 overflow-y-auto pr-2">
           {filteredRecipes.length > 0 ? (
             filteredRecipes.map((recipe) => {
-              // Calculate matched versions for display
-              const query = searchQuery.toLowerCase();
-              let matchedVersions: string[] = [];
-              
-              if (query) {
-                if (searchScope === 'current') {
-                  const currentVer = recipe.versions.find(v => v.version === recipe.currentVersion);
-                  if (currentVer && (
-                    currentVer.ingredients.some(ing => ing.name.toLowerCase().includes(query)) ||
-                    currentVer.notes.toLowerCase().includes(query) || 
-                    (currentVer.memo && currentVer.memo.toLowerCase().includes(query))
-                  )) {
-                    matchedVersions = [currentVer.version];
-                  }
-                } else {
-                  matchedVersions = recipe.versions.filter(v => 
-                    v.ingredients.some(ing => ing.name.toLowerCase().includes(query)) ||
-                    v.notes.toLowerCase().includes(query) ||
-                    (v.memo && v.memo.toLowerCase().includes(query))
-                  ).map(v => v.version);
-                }
-              }
-
               return (
                 <button key={recipe.id} onClick={() => { setSelectedRecipeId(recipe.id); setIsAddingVersion(false); }} className={`flex w-full flex-col gap-2 rounded-sm border p-4 transition-all ${selectedRecipeId === recipe.id ? 'border-blue-500 bg-blue-500/10' : 'border-zinc-800 bg-zinc-900/30 hover:bg-zinc-900/60'}`}>
                   <div className="flex w-full items-center justify-between">
                     <h4 className="font-bold">{recipe.title}</h4>
                     <ChevronRight size={16} className={`transition-transform ${selectedRecipeId === recipe.id ? 'text-blue-500 translate-x-1' : 'text-zinc-600'}`} />
                   </div>
-                  
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
                     {/* Always show current version */}
                     <span className="flex items-center gap-1 rounded-sm bg-zinc-800 px-1.5 py-0.5 text-[10px] text-zinc-400">
                       <Star size={8} className="fill-zinc-400" />
                       v{recipe.currentVersion}
                     </span>
-
-                    {/* Show matched versions if searching */}
-                    {searchQuery && matchedVersions.length > 0 && (
-                      <>
-                        <span className="text-[10px] text-zinc-600">|</span>
-                        <div className="flex flex-wrap gap-1">
-                          {matchedVersions.map(ver => (
-                            <span key={ver} className="rounded-sm bg-blue-900/40 border border-blue-500/30 px-1.5 py-0.5 text-[10px] text-blue-300 font-medium">
-                              v{ver} 검색됨
-                            </span>
-                          ))}
-                        </div>
-                      </>
+                    {recipe.source_author && (
+                        <span className="text-[10px] text-blue-400 flex items-center gap-1">
+                            From: {recipe.source_author}
+                        </span>
                     )}
                   </div>
                 </button>

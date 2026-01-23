@@ -38,6 +38,7 @@ export interface Recipe {
   versions: RecipeVersion[];
   is_public?: boolean;
   user_id?: string;
+  source_author?: string;
 }
 
 export interface CommunityRecipe {

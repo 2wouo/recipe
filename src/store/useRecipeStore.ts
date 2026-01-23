@@ -38,7 +38,8 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
       currentVersion: row.current_version,
       versions: (row.versions as RecipeVersion[]) || [],
       user_id: row.user_id,
-      is_public: row.is_public
+      is_public: row.is_public,
+      source_author: row.source_author
     }));
 
     set({ recipes: mappedRecipes });
@@ -245,10 +246,11 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
             version: '1.0',
             ingredients: communityRecipe.ingredients,
             steps: communityRecipe.steps,
-            notes: `커뮤니티에서 가져옴 (원본 작성자: ${communityRecipe.author_name})`,
+            notes: `커뮤니티에서 가져옴 (원본: ${communityRecipe.author_name})`,
             createdAt: new Date().toISOString()
         }],
-        user_id: user.id
+        user_id: user.id,
+        source_author: communityRecipe.author_name // 원작자 저장
     };
 
     const { error } = await supabase.from('recipes').insert({
@@ -258,6 +260,7 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
         current_version: newRecipe.currentVersion,
         versions: newRecipe.versions,
         user_id: user.id,
+        source_author: newRecipe.source_author
     });
 
     if (error) {
