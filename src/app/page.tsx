@@ -71,7 +71,6 @@ export default function Home() {
     <div className="space-y-8">
       <div>
         <h2 className="text-xl font-bold tracking-tight">대시보드</h2>
-        <p className="text-zinc-400">주방의 현황을 한눈에 확인하세요.</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

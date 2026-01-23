@@ -33,7 +33,6 @@ export default function SettingsPage() {
     <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4">
       <div>
         <h2 className="text-xl font-bold tracking-tight">설정</h2>
-        <p className="text-zinc-400">계정 및 앱 설정을 관리하세요.</p>
       </div>
 
       {/* 내 프로필 카드 */}

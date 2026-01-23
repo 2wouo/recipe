@@ -59,11 +59,10 @@ export default function CommunityPage() {
     <div className="space-y-8 pb-20">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            <ChefHat className="text-blue-500" />
+          <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            <ChefHat className="text-blue-500" size={24} />
             커뮤니티
           </h2>
-          <p className="text-zinc-400">다른 요리사들의 비법 레시피를 구경하세요.</p>
         </div>
         
         <form onSubmit={handleSearch} className="relative w-full md:w-80">
