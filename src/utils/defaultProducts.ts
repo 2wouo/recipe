@@ -130,6 +130,8 @@ export const DEFAULT_PRODUCT_LIST = [
   { name: '새송이버섯', category: '채소' },
   { name: '팽이버섯', category: '채소' },
   { name: '양송이버섯', category: '채소' },
+  { name: '숙주', category: '채소' },
+  { name: '콩나물', category: '채소' },
 
   // 🍎 과일
   { name: '사과', category: '과일' },
@@ -209,6 +211,7 @@ export const DEFAULT_PRODUCT_LIST = [
   { name: '마요네즈', category: '양념/소스' },
   { name: '케첩', category: '양념/소스' },
   { name: '머스터드', category: '양념/소스' },
+  { name: '홀그레인 머스타드', category: '양념/소스' },
   { name: '굴소스', category: '양념/소스' },
   { name: '데리야끼소스', category: '양념/소스' },
   { name: '스리라차', category: '양념/소스' },
@@ -237,6 +240,15 @@ export const DEFAULT_PRODUCT_LIST = [
   { name: '햇반', category: '가공/냉동' },
   { name: '즉석국', category: '가공/냉동' },
   { name: '즉석찌개', category: '가공/냉동' },
+  { name: '배추김치', category: '가공/냉동' },
+  { name: '포기김치', category: '가공/냉동' },
+  { name: '백김치', category: '가공/냉동' },
+  { name: '깍두기', category: '가공/냉동' },
+  { name: '열무김치', category: '가공/냉동' },
+  { name: '파김치', category: '가공/냉동' },
+  { name: '갓김치', category: '가공/냉동' },
+  { name: '총각김치', category: '가공/냉동' },
+  { name: '겉절이', category: '가공/냉동' },
 
   // ☕ 음료/간식
   { name: '물', category: '음료/간식' },
@@ -245,6 +257,7 @@ export const DEFAULT_PRODUCT_LIST = [
   { name: '사이다', category: '음료/간식' },
   { name: '주스', category: '음료/간식' },
   { name: '커피원두', category: '음료/간식' },
+  { name: '인스턴트커피', category: '음료/간식' },
   { name: '티백', category: '음료/간식' },
   { name: '녹차', category: '음료/간식' },
   { name: '홍차', category: '음료/간식' },
