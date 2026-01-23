@@ -10,6 +10,7 @@ import { Plus, Book, History, ChevronRight, Save, Trash2, Copy, CheckCircle2, Ci
 import { format } from 'date-fns';
 import QuickProductAddModal from '@/components/products/QuickProductAddModal';
 import PublishModal from '@/components/community/PublishModal';
+import VersionSelectModal from '@/components/community/VersionSelectModal';
 import Autocomplete from '@/components/ui/Autocomplete';
 
 function RecipesContent() {
@@ -31,6 +32,7 @@ function RecipesContent() {
   const [isAddingRecipe, setIsAddingRecipe] = useState(false);
   const [isAddingVersion, setIsAddingVersion] = useState(false);
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
+  const [isVersionSelectOpen, setIsVersionSelectOpen] = useState(false);
   const [selectedVersionForPublish, setSelectedVersionForPublish] = useState<RecipeVersion | undefined>(undefined);
   const [editingVersionIndex, setEditingVersionIndex] = useState<number | null>(null);
   
@@ -197,7 +199,19 @@ function RecipesContent() {
     }
   };
 
-  const handleOpenPublish = (version: RecipeVersion) => {
+  const handleOpenPublish = (version?: RecipeVersion) => {
+      if (version) {
+          // specific version selected
+          setSelectedVersionForPublish(version);
+          setIsPublishModalOpen(true);
+      } else {
+          // open version selector
+          setIsVersionSelectOpen(true);
+      }
+  };
+
+  const handleVersionSelected = (version: RecipeVersion) => {
+      setIsVersionSelectOpen(false);
       setSelectedVersionForPublish(version);
       setIsPublishModalOpen(true);
   };
@@ -413,21 +427,21 @@ function RecipesContent() {
               
               <div className="mt-6 flex flex-wrap gap-2 md:mt-0">
                 {!isAddingVersion && (
-                  <button onClick={handleDeleteRecipe} className="flex flex-1 items-center justify-center gap-2 rounded-sm border border-red-900/50 px-3 py-2.5 text-xs font-medium text-red-500 hover:bg-red-900/20 md:flex-none">
-                    <Trash2 size={14} />
-                    레시피 삭제
-                  </button>
+                  <>
+                    <button 
+                        onClick={() => handleOpenPublish()}
+                        className="flex flex-1 items-center justify-center gap-2 rounded-sm border border-blue-500/30 text-blue-500 hover:bg-blue-500/10 px-3 py-2.5 text-xs font-medium md:flex-none transition-colors"
+                    >
+                        <Send size={14} />
+                        공유
+                    </button>
+                    <button onClick={handleDeleteRecipe} className="flex flex-1 items-center justify-center gap-2 rounded-sm border border-red-900/50 px-3 py-2.5 text-xs font-medium text-red-500 hover:bg-red-900/20 md:flex-none">
+                        <Trash2 size={14} />
+                        삭제
+                    </button>
+                  </>
                 )}
                 <button onClick={handleOpenAddVersion} className={`flex flex-[2] items-center justify-center gap-2 rounded-sm border px-4 py-2.5 text-xs font-medium transition-colors md:flex-none ${isAddingVersion ? 'border-zinc-700 bg-zinc-800 text-zinc-300' : 'border-blue-500 bg-blue-600 text-white hover:bg-blue-700'}`}>{isAddingVersion ? '기록 취소' : <><History size={14} />새 버전 기록</>}</button>
-                {!isAddingVersion && (
-                  <button 
-                    onClick={() => setIsPublishModalOpen(true)}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-sm border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-xs font-medium text-zinc-300 hover:bg-zinc-700 hover:text-white md:flex-none"
-                  >
-                    <Send size={14} />
-                    공유
-                  </button>
-                )}
               </div>
             </div>
 
@@ -593,12 +607,20 @@ function RecipesContent() {
       </div>
       <QuickProductAddModal isOpen={isQuickAddOpen} onClose={() => setIsQuickAddOpen(false)} initialName={quickAddName} />
       {selectedRecipe && (
-        <PublishModal 
-          recipe={selectedRecipe} 
-          version={selectedVersionForPublish}
-          isOpen={isPublishModalOpen} 
-          onClose={() => setIsPublishModalOpen(false)} 
-        />
+        <>
+            <VersionSelectModal 
+                recipe={selectedRecipe}
+                isOpen={isVersionSelectOpen}
+                onClose={() => setIsVersionSelectOpen(false)}
+                onSelect={handleVersionSelected}
+            />
+            <PublishModal 
+                recipe={selectedRecipe} 
+                version={selectedVersionForPublish}
+                isOpen={isPublishModalOpen} 
+                onClose={() => setIsPublishModalOpen(false)} 
+            />
+        </>
       )}
     </div>
   );
