@@ -129,49 +129,69 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-sm border border-zinc-800 bg-zinc-900/50 p-6">
-          <h3 className="mb-4 font-bold">유통기한 임박 식재료</h3>
-          {expiringSoon.length > 0 ? (
+      <div className="rounded-sm border border-zinc-800 bg-zinc-900/50 p-6">
+        <h3 className="mb-6 font-bold text-lg flex items-center gap-2">
+            <AlertCircle className="text-orange-500" size={20} />
+            유통기한 임박 식재료 (7일 내)
+        </h3>
+        
+        <div className="grid gap-6 lg:grid-cols-3">
+            {/* 냉장실 */}
             <div className="space-y-3">
-              {expiringSoon.slice(0, 5).map((item) => (
-                <div key={item.id} className="flex items-center justify-between rounded-sm bg-zinc-950 p-3 border border-zinc-800">
-                  <div>
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-xs text-zinc-500">{item.storageType}</p>
-                  </div>
-                  <span className="text-sm font-bold text-orange-500">
-                    D-{differenceInDays(parseISO(item.expiryDate), today)}
-                  </span>
-                </div>
-              ))}
+                <h4 className="text-sm font-bold text-blue-400 border-b border-zinc-800 pb-2 mb-3">냉장실</h4>
+                {expiringSoon.filter(i => i.storageType === 'FRIDGE').length > 0 ? (
+                    expiringSoon.filter(i => i.storageType === 'FRIDGE').slice(0, 5).map(item => (
+                        <ExpiringItemRow key={item.id} item={item} today={today} />
+                    ))
+                ) : (
+                    <EmptyState />
+                )}
             </div>
-          ) : (
-            <p className="py-10 text-center text-sm text-zinc-500">임박한 식재료가 없습니다.</p>
-          )}
-        </div>
 
-        <div className="rounded-sm border border-zinc-800 bg-zinc-900/50 p-6">
-          <h3 className="mb-4 font-bold">최근 레시피</h3>
-          {recipes.length > 0 ? (
+            {/* 냉동실 */}
             <div className="space-y-3">
-              {recipes.slice(0, 5).map((recipe) => (
-                <div key={recipe.id} className="flex items-center justify-between rounded-sm bg-zinc-950 p-3 border border-zinc-800">
-                  <p className="font-medium">{recipe.title}</p>
-                  <span className="text-xs text-blue-500">v{recipe.currentVersion}</span>
-                </div>
-              ))}
+                <h4 className="text-sm font-bold text-cyan-300 border-b border-zinc-800 pb-2 mb-3">냉동실</h4>
+                {expiringSoon.filter(i => i.storageType === 'FREEZER').length > 0 ? (
+                    expiringSoon.filter(i => i.storageType === 'FREEZER').slice(0, 5).map(item => (
+                        <ExpiringItemRow key={item.id} item={item} today={today} />
+                    ))
+                ) : (
+                    <EmptyState />
+                )}
             </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-10 space-y-4">
-              <p className="text-sm text-zinc-500">등록된 레시피가 없습니다.</p>
-              <button className="rounded-sm bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-                첫 레시피 작성하기
-              </button>
+
+            {/* 실온 */}
+            <div className="space-y-3">
+                <h4 className="text-sm font-bold text-amber-400 border-b border-zinc-800 pb-2 mb-3">실온/펜트리</h4>
+                {expiringSoon.filter(i => i.storageType === 'PANTRY').length > 0 ? (
+                    expiringSoon.filter(i => i.storageType === 'PANTRY').slice(0, 5).map(item => (
+                        <ExpiringItemRow key={item.id} item={item} today={today} />
+                    ))
+                ) : (
+                    <EmptyState />
+                )}
             </div>
-          )}
         </div>
       </div>
     </div>
   );
+}
+
+function ExpiringItemRow({ item, today }: { item: any, today: Date }) {
+    const days = differenceInDays(parseISO(item.expiryDate), today);
+    return (
+        <div className="flex items-center justify-between rounded-md bg-zinc-950 p-3 border border-zinc-800/50 hover:border-zinc-700 transition-colors">
+            <div className="overflow-hidden">
+                <p className="font-medium text-sm truncate">{item.name}</p>
+                <p className="text-xs text-zinc-500 truncate">{item.detail}</p>
+            </div>
+            <span className={`text-xs font-bold whitespace-nowrap ml-2 ${days < 0 ? 'text-red-500' : days <= 3 ? 'text-orange-500' : 'text-yellow-500'}`}>
+                {days < 0 ? `+${Math.abs(days)}일` : `D-${days}`}
+            </span>
+        </div>
+    )
+}
+
+function EmptyState() {
+    return <div className="text-xs text-zinc-600 text-center py-4 bg-zinc-900/30 rounded-md">임박한 재료 없음</div>
 }
