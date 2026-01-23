@@ -24,10 +24,10 @@ export default function LoginPage() {
   // Handle successful login
   useEffect(() => {
     if (loginState.success && mode === 'login') {
-      router.refresh(); // Update server components with new session
-      router.push('/'); // Navigate to home
+      // Force hard navigation to ensure cookies are sent properly
+      window.location.href = '/'; 
     }
-  }, [loginState.success, mode, router]);
+  }, [loginState.success, mode]);
 
   // Reset states when switching modes
   useEffect(() => {
