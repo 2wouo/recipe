@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Recipe, RecipeVersion } from '@/types';
 import { useCommunityStore } from '@/store/useCommunityStore';
 import { X, Send, AlertCircle, Trash2, Plus } from 'lucide-react';
@@ -23,6 +23,16 @@ export default function PublishModal({ recipe, version, isOpen, onClose }: Publi
   const [ingredients, setIngredients] = useState(targetVersion?.ingredients.map(i => ({ ...i })) || []);
   const [steps, setSteps] = useState([...(targetVersion?.steps || [])]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Update form when version/recipe changes
+  useEffect(() => {
+    if (isOpen) {
+        setTitle(recipe.title);
+        setDescription(recipe.description || '');
+        setIngredients(targetVersion?.ingredients.map(i => ({ ...i })) || []);
+        setSteps([...(targetVersion?.steps || [])]);
+    }
+  }, [recipe, targetVersion, isOpen]);
 
   if (!isOpen) return null;
 
