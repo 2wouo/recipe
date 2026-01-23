@@ -215,6 +215,11 @@ export const DEFAULT_PRODUCT_LIST = [
   { name: '칠리소스', category: '양념/소스' },
   { name: '토마토소스', category: '양념/소스' },
   { name: '간장소스', category: '양념/소스' },
+  { name: '치킨스톡', category: '양념/소스' },
+  { name: '다시다', category: '양념/소스' },
+  { name: '미원', category: '양념/소스' },
+  { name: '연두', category: '양념/소스' },
+  { name: '혼다시', category: '양념/소스' },
 
   // 🧊 가공/냉동
   { name: '두부', category: '가공/냉동' },
