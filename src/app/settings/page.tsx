@@ -2,13 +2,15 @@
 
 import { useAuthStore } from '@/store/useAuthStore';
 import { useRouter } from 'next/navigation';
-import { LogOut, User, Shield, Trash2, Mail } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { LogOut, User, Shield, Trash2, Mail, Camera, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function SettingsPage() {
-  const { user, signOut } = useAuthStore();
+  const { user, signOut, uploadAvatar, updateProfile } = useAuthStore();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -17,6 +19,21 @@ export default function SettingsPage() {
   const handleSignOut = async () => {
     await signOut();
     window.location.href = '/login';
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const publicUrl = await uploadAvatar(file);
+    
+    if (publicUrl) {
+        await updateProfile({ avatar_url: publicUrl });
+    } else {
+        alert('이미지 업로드에 실패했습니다.');
+    }
+    setIsUploading(false);
   };
 
   // Prevent hydration mismatch
@@ -43,8 +60,33 @@ export default function SettingsPage() {
         </h3>
         
         <div className="flex items-center gap-4">
-          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-white flex items-center justify-center font-bold text-2xl shadow-lg shadow-blue-900/20">
-             {user?.user_metadata?.display_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+          <div 
+            className="relative h-16 w-16 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 group cursor-pointer"
+            onClick={() => fileInputRef.current?.click()}
+          >
+             {user?.user_metadata?.avatar_url ? (
+                 <img 
+                    src={user.user_metadata.avatar_url} 
+                    alt="Profile" 
+                    className="h-full w-full rounded-full object-cover"
+                 />
+             ) : (
+                 <div className="h-full w-full flex items-center justify-center text-white font-bold text-2xl">
+                    {user?.user_metadata?.display_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+                 </div>
+             )}
+             
+             {/* Upload Overlay */}
+             <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                {isUploading ? <Loader2 className="animate-spin text-white" size={20} /> : <Camera className="text-white" size={20} />}
+             </div>
+             <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                accept="image/*"
+                onChange={handleFileChange}
+             />
           </div>
           <div>
             <p className="text-lg font-bold text-white">

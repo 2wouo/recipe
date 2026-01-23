@@ -19,6 +19,8 @@ interface CommunityState {
   fetchComments: (recipeId: string) => Promise<void>;
   addComment: (recipeId: string, content: string) => Promise<void>;
   deleteComment: (commentId: string) => Promise<void>;
+  
+  fetchRecipesByAuthor: (authorId: string) => Promise<CommunityRecipe[]>;
 }
 
 export const useCommunityStore = create<CommunityState>((set, get) => ({
@@ -26,6 +28,34 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
   myCommunityRecipes: [],
   comments: [],
   loading: false,
+
+  fetchRecipesByAuthor: async (authorId) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('community_recipes')
+      .select('*')
+      .eq('author_id', authorId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching author recipes:', error);
+      return [];
+    }
+
+    return (data || []).map(row => ({
+      id: row.id,
+      original_recipe_id: row.original_recipe_id,
+      title: row.title,
+      description: row.description,
+      ingredients: row.ingredients,
+      steps: row.steps,
+      author_id: row.author_id,
+      author_name: row.author_name,
+      // author_avatar_url: row.author_avatar_url, // If we added this column
+      created_at: row.created_at,
+      likes_count: row.likes_count
+    }));
+  },
 
   fetchComments: async (recipeId) => {
     const supabase = createClient();
@@ -89,7 +119,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
       .order('created_at', { ascending: false });
 
     if (searchQuery) {
-      query = query.ilike('title', `%${searchQuery}%`);
+      query = query.or(`title.ilike.%${searchQuery}%,author_name.ilike.%${searchQuery}%`);
     }
 
     const { data, error } = await query;

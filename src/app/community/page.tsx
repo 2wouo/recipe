@@ -9,8 +9,10 @@ import { format } from 'date-fns';
 import { CommunityRecipe, Recipe } from '@/types';
 import PublishModal from '@/components/community/PublishModal';
 import CommentSection from '@/components/community/CommentSection';
+import { useRouter } from 'next/navigation';
 
 export default function CommunityPage() {
+  const router = useRouter();
   const { communityRecipes, myCommunityRecipes, loading, fetchCommunityRecipes, fetchMyCommunityRecipes, deleteCommunityRecipe } = useCommunityStore();
   const { importRecipe } = useRecipeStore();
   const { user } = useAuthStore();
@@ -141,11 +143,17 @@ export default function CommunityPage() {
                 </p>
 
                 <div className="flex items-center justify-between border-t border-zinc-800 pt-4">
-                  <div className="flex items-center gap-2">
-                    <div className="h-6 w-6 rounded-full bg-zinc-800 flex items-center justify-center">
-                        <User size={12} className="text-zinc-500" />
+                  <div 
+                    className="flex items-center gap-2 cursor-pointer hover:text-blue-400 transition-colors group/author"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/profile/${recipe.author_id}`);
+                    }}
+                  >
+                    <div className="h-6 w-6 rounded-full bg-zinc-800 flex items-center justify-center group-hover/author:bg-blue-900/30 transition-colors">
+                        <User size={12} className="text-zinc-500 group-hover/author:text-blue-400" />
                     </div>
-                    <span className="text-xs text-zinc-500">{recipe.author_name}</span>
+                    <span className="text-xs text-zinc-500 group-hover/author:text-blue-400">{recipe.author_name}</span>
                   </div>
                   <div className="flex items-center gap-3 text-zinc-600">
                     <div className="flex items-center gap-1 text-[10px]">

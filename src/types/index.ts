@@ -55,6 +55,7 @@ export interface CommunityRecipe {
   author_name?: string;
   created_at: string;
   likes_count: number;
+  author_avatar_url?: string;
 }
 
 export interface Comment {
@@ -62,6 +63,15 @@ export interface Comment {
   recipe_id: string;
   user_id: string;
   user_name: string;
+  user_avatar_url?: string; // 댓글 작성자 프사
   content: string;
   created_at: string;
+}
+
+export interface UserProfile {
+  id: string;
+  username: string;
+  email: string;
+  avatar_url?: string;
+  display_name?: string;
 }
