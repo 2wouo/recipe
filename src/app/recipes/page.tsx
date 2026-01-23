@@ -449,14 +449,14 @@ function RecipesContent() {
                   
                   <div className="space-y-2">
                     {newVersion.ingredients.map((ing, idx) => (
-                      <div key={idx} className="flex gap-2 items-start group">
+                      <div key={idx} className="flex gap-3 items-start group">
                          <button 
                             type="button" 
                             onClick={() => updateIngredient(idx, 'isRequired', !ing.isRequired)} 
-                            className={`mt-0 h-10 w-10 shrink-0 rounded-md border transition-all flex items-center justify-center ${ing.isRequired ? 'bg-blue-600 border-blue-500 text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-600 hover:text-zinc-400'}`}
+                            className={`mt-1.5 h-6 w-6 shrink-0 rounded-md border transition-all flex items-center justify-center ${ing.isRequired ? 'bg-blue-600 border-blue-500 text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-600 hover:text-zinc-400'}`}
                             title={ing.isRequired ? '필수 재료' : '선택 재료'}
                          >
-                            <Asterisk size={16} />
+                            <Asterisk size={14} />
                          </button>
                          <div className="flex-[3]">
                             <Autocomplete 
@@ -470,12 +470,12 @@ function RecipesContent() {
                             placeholder="수량" 
                             value={ing.amount} 
                             onChange={e => updateIngredient(idx, 'amount', e.target.value)} 
-                            className="flex-[1.5] h-10 rounded-md border border-zinc-800 bg-zinc-900/50 px-3 text-sm text-zinc-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-zinc-600" 
+                            className="flex-[1.5] h-10 rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-zinc-600" 
                          />
                          <button 
                             type="button" 
                             onClick={() => removeIngredientRow(idx)} 
-                            className="h-10 w-8 shrink-0 text-zinc-600 hover:text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="mt-2 text-zinc-600 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                             tabIndex={-1}
                          >
                             <Trash2 size={14} />
