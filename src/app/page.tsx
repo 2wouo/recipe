@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useInventoryStore } from '@/store/useInventoryStore';
 import { useRecipeStore } from '@/store/useRecipeStore';
-import { Refrigerator, BookOpen, AlertCircle, Clock, ChefHat, ArrowRight, CheckCircle2, Info } from 'lucide-react';
+import { Refrigerator, BookOpen, AlertCircle, Clock, ChefHat, ArrowRight, CheckCircle2, Info, Plus } from 'lucide-react';
 import { differenceInDays, parseISO, format } from 'date-fns';
 import Link from 'next/link';
 
@@ -36,19 +36,22 @@ export default function Home() {
 
     const scoredRecipes = recipes.map(recipe => {
       const currentVer = recipe.versions.find(v => v.version === recipe.currentVersion);
-      if (!currentVer) return { recipe, score: 0, matchedIngredients: [] };
+      if (!currentVer) return { recipe, score: 0, matchedIngredients: [], missingIngredients: [] };
 
       let score = 0;
       const matchedIngredients: string[] = [];
+      const missingIngredients: string[] = [];
 
       currentVer.ingredients.forEach(ing => {
-        const stockItem = items.find(item => item.name.trim() === ing.name.trim());
+        const stockItem = items.find(item => item.name.trim().toLowerCase() === ing.name.trim().toLowerCase());
         if (stockItem) {
           score += 1;
           matchedIngredients.push(ing.name);
           const daysLeft = differenceInDays(parseISO(stockItem.expiryDate), today);
-          if (daysLeft <= 3) score += 20; // 긴급 재료 가중치
-          else if (daysLeft <= 7) score += 10; // 임박 재료 가중치
+          if (daysLeft <= 3) score += 20; 
+          else if (daysLeft <= 7) score += 10;
+        } else {
+          missingIngredients.push(ing.name);
         }
       });
 
@@ -57,11 +60,11 @@ export default function Home() {
         score, 
         matchedCount: matchedIngredients.length,
         totalCount: currentVer.ingredients.length,
-        matchedIngredients 
+        matchedIngredients,
+        missingIngredients
       };
     });
 
-    // 점수 높은 순으로 정렬 후, 상위 5개 중 랜덤하게 2개 추출 (매번 다르게)
     const candidates = scoredRecipes
         .filter(r => r.score > 0)
         .sort((a, b) => b.score - a.score)
@@ -104,13 +107,24 @@ export default function Home() {
                             </p>
                             
                             <div className="flex flex-wrap gap-1.5 mb-6">
+                                {/* 있는 재료 */}
                                 {rec.matchedIngredients.slice(0, 3).map(ing => (
-                                    <span key={ing} className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-zinc-800 text-blue-400/80 text-[10px] font-bold">
+                                    <span key={ing} className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-zinc-800 text-blue-400/80 text-[10px] font-bold border border-blue-500/10">
                                         <CheckCircle2 size={10} />
                                         {ing}
                                     </span>
                                 ))}
-                                {rec.matchedIngredients.length > 3 && <span className="text-zinc-700 text-[9px] pt-1">+{rec.matchedIngredients.length - 3}</span>}
+                                
+                                {/* 없는 재료 (최대 표시 개수 유지) */}
+                                {rec.missingIngredients.slice(0, Math.max(0, 4 - rec.matchedIngredients.length)).map(ing => (
+                                    <span key={ing} className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-zinc-900 text-zinc-600 text-[10px] font-bold border border-zinc-800 border-dashed">
+                                        {ing}
+                                    </span>
+                                ))}
+                                
+                                {(rec.matchedIngredients.length + rec.missingIngredients.length) > 4 && (
+                                    <span className="text-zinc-700 text-[9px] pt-1">...외 더 있음</span>
+                                )}
                             </div>
 
                             <Link 
@@ -118,7 +132,7 @@ export default function Home() {
                                 className="flex items-center justify-between w-full h-10 px-4 rounded-md bg-blue-600/10 text-blue-500 font-bold text-xs hover:bg-blue-600 hover:text-white transition-all group/btn"
                             >
                                 상세 레시피 보기
-                                <ArrowRight size={14} className="group/btn:translate-x-1 transition-transform" />
+                                <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
                             </Link>
                         </div>
                     </div>
@@ -198,12 +212,11 @@ export default function Home() {
 function ExpiringItemRow({ item, today }: { item: any, today: Date }) {
     const days = differenceInDays(parseISO(item.expiryDate), today);
     
-    // Updated color logic
     const getStatusStyles = () => {
-        if (days < 0) return 'text-red-500 border-red-500/20 bg-red-500/5'; // 유통기한 지남: 레드
-        if (days <= 3) return 'text-rose-400 border-rose-400/20 bg-rose-400/5'; // 0~3일: 연한 레드/로즈
-        if (days <= 7) return 'text-amber-400 border-amber-400/10 bg-amber-400/5'; // 4~7일: 오렌지/앰버
-        return 'text-blue-400 border-blue-500/10 bg-zinc-950'; // 그 외: 블루
+        if (days < 0) return 'text-red-500 border-red-500/20 bg-red-500/5';
+        if (days <= 3) return 'text-rose-400 border-rose-400/20 bg-rose-400/5';
+        if (days <= 7) return 'text-amber-400 border-amber-400/10 bg-amber-400/5';
+        return 'text-blue-400 border-blue-500/10 bg-zinc-950';
     };
 
     return (
