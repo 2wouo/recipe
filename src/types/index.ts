@@ -36,4 +36,22 @@ export interface Recipe {
   description: string;
   currentVersion: string;
   versions: RecipeVersion[];
+  is_public?: boolean;
+  user_id?: string;
+}
+
+export interface CommunityRecipe {
+  id: string;
+  original_recipe_id?: string;
+  title: string;
+  description: string;
+  ingredients: {
+    name: string;
+    amount: string;
+  }[];
+  steps: string[];
+  author_id: string;
+  author_name?: string;
+  created_at: string;
+  likes_count: number;
 }

@@ -6,9 +6,10 @@ import { useRecipeStore } from '@/store/useRecipeStore';
 import { useInventoryStore } from '@/store/useInventoryStore';
 import { useProductStore } from '@/store/useProductStore';
 import { RecipeVersion } from '@/types';
-import { Plus, Book, History, ChevronRight, Save, Trash2, Copy, CheckCircle2, Circle, Pencil, Star, StickyNote, Lightbulb, Check, AlertCircle, Refrigerator, Box, X, Search, ArrowLeft } from 'lucide-react';
+import { Plus, Book, History, ChevronRight, Save, Trash2, Copy, CheckCircle2, Circle, Pencil, Star, StickyNote, Lightbulb, Check, AlertCircle, Refrigerator, Box, X, Search, ArrowLeft, Send } from 'lucide-react';
 import { format } from 'date-fns';
 import QuickProductAddModal from '@/components/products/QuickProductAddModal';
+import PublishModal from '@/components/community/PublishModal';
 import Autocomplete from '@/components/ui/Autocomplete';
 
 function RecipesContent() {
@@ -29,6 +30,7 @@ function RecipesContent() {
   const [selectedRecipeId, setSelectedRecipeId] = useState<string | null>(initialId);
   const [isAddingRecipe, setIsAddingRecipe] = useState(false);
   const [isAddingVersion, setIsAddingVersion] = useState(false);
+  const [isPublishModalOpen, setIsPublishModalOpen] = useState(false);
   const [editingVersionIndex, setEditingVersionIndex] = useState<number | null>(null);
   
   const selectedRecipe = recipes.find(r => r.id === selectedRecipeId);
@@ -399,6 +401,15 @@ function RecipesContent() {
                   </button>
                 )}
                 <button onClick={handleOpenAddVersion} className={`flex flex-[2] items-center justify-center gap-2 rounded-sm border px-4 py-2.5 text-xs font-medium transition-colors md:flex-none ${isAddingVersion ? 'border-zinc-700 bg-zinc-800 text-zinc-300' : 'border-blue-500 bg-blue-600 text-white hover:bg-blue-700'}`}>{isAddingVersion ? '기록 취소' : <><History size={14} />새 버전 기록</>}</button>
+                {!isAddingVersion && (
+                  <button 
+                    onClick={() => setIsPublishModalOpen(true)}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-sm border border-zinc-700 bg-zinc-800 px-3 py-2.5 text-xs font-medium text-zinc-300 hover:bg-zinc-700 hover:text-white md:flex-none"
+                  >
+                    <Send size={14} />
+                    공유
+                  </button>
+                )}
               </div>
             </div>
 
@@ -475,6 +486,13 @@ function RecipesContent() {
         )}
       </div>
       <QuickProductAddModal isOpen={isQuickAddOpen} onClose={() => setIsQuickAddOpen(false)} initialName={quickAddName} />
+      {selectedRecipe && (
+        <PublishModal 
+          recipe={selectedRecipe} 
+          isOpen={isPublishModalOpen} 
+          onClose={() => setIsPublishModalOpen(false)} 
+        />
+      )}
     </div>
   );
 }
