@@ -1,9 +1,9 @@
 'use client'
 
-import { login, signup, type ActionState } from './actions'
+import { login, signup, resetPassword, type ActionState } from './actions'
 import { useActionState, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChefHat, Loader2, Mail, Lock, ArrowLeft, CheckCircle2, User, ShieldCheck } from 'lucide-react'
+import { ChefHat, Loader2, Mail, Lock, ArrowLeft, CheckCircle2, User, KeyRound } from 'lucide-react'
 
 const initialState: ActionState = {
   error: null,
@@ -13,25 +13,68 @@ const initialState: ActionState = {
 
 export default function LoginPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<'login' | 'signup'>('login');
+  const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login');
   
-  // Login Action State
   const [loginState, loginAction, isLoginPending] = useActionState(login, initialState);
-  
-  // Signup Action State
   const [signupState, signupAction, isSignupPending] = useActionState(signup, initialState);
+  const [resetState, resetAction, isResetPending] = useActionState(resetPassword, initialState);
 
-  // Handle successful login or signup
   useEffect(() => {
-    // 로그인 성공 시 메인으로
     if (loginState.success && mode === 'login') {
       window.location.href = '/'; 
     }
-    // 회원가입 성공 시 바로 메인으로 (자동 로그인 됨)
     if (signupState.success && mode === 'signup') {
         window.location.href = '/'; 
     }
   }, [loginState.success, signupState.success, mode]);
+
+  // 비밀번호 찾기 화면
+  if (mode === 'reset') {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black px-4">
+        <div className="w-full max-w-sm space-y-8">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold tracking-tight text-white">비밀번호 찾기</h2>
+            <p className="mt-2 text-sm text-zinc-400">
+              가입하신 아이디 또는 이메일을 입력하세요.
+            </p>
+          </div>
+
+          {resetState.success ? (
+             <div className="text-center space-y-4 animate-in fade-in zoom-in">
+                <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-green-500/20 text-green-500">
+                    <CheckCircle2 size={32} />
+                </div>
+                <p className="text-white font-medium">{resetState.message}</p>
+                <button onClick={() => setMode('login')} className="text-sm text-blue-500 hover:text-blue-400">로그인으로 돌아가기</button>
+             </div>
+          ) : (
+            <form action={resetAction} className="mt-8 space-y-4">
+                <div className="relative group">
+                    <User className="absolute left-3 top-3 text-zinc-500" size={18} />
+                    <input
+                    type="text"
+                    name="input"
+                    placeholder="아이디 또는 이메일"
+                    required
+                    className="w-full rounded-sm border border-zinc-800 bg-zinc-900 py-3 pl-10 pr-4 text-sm text-white outline-none focus:border-blue-500 placeholder:text-zinc-600 transition-colors"
+                    />
+                </div>
+                {resetState.error && <p className="text-xs text-red-500 text-center">{resetState.error}</p>}
+                <button
+                    type="submit"
+                    disabled={isResetPending}
+                    className="flex w-full items-center justify-center rounded-sm bg-blue-600 py-3 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                    {isResetPending ? <Loader2 className="animate-spin" size={20} /> : '재설정 메일 보내기'}
+                </button>
+                <button type="button" onClick={() => setMode('login')} className="w-full text-xs text-zinc-500 hover:text-white py-2">취소</button>
+            </form>
+          )}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-black px-4">
@@ -44,9 +87,7 @@ export default function LoginPage() {
             {mode === 'login' ? 'Smart Kitchen Log' : '회원가입'}
           </h2>
           <p className="mt-2 text-sm text-zinc-400">
-            {mode === 'login' 
-              ? '아이디로 로그인하세요.' 
-              : '나만의 주방 관리 계정을 만드세요.'}
+            {mode === 'login' ? '아이디로 로그인하세요.' : '아이디와 이메일로 계정을 만드세요.'}
           </p>
         </div>
 
@@ -58,10 +99,8 @@ export default function LoginPage() {
                 <input
                   type="text"
                   name="username"
-                  placeholder="아이디 (영문, 숫자)"
+                  placeholder="아이디"
                   required
-                  pattern="[a-zA-Z0-9_]+"
-                  title="영문, 숫자, 언더바(_)만 입력 가능합니다"
                   className="w-full rounded-sm border border-zinc-800 bg-zinc-900 py-3 pl-10 pr-4 text-sm text-white outline-none focus:border-blue-500 placeholder:text-zinc-600 transition-colors"
                 />
               </div>
@@ -91,7 +130,14 @@ export default function LoginPage() {
               {isLoginPending ? <Loader2 className="animate-spin" size={20} /> : '로그인'}
             </button>
             
-            <div className="mt-4 text-center">
+            <div className="mt-4 flex flex-col gap-2 text-center">
+                <button 
+                    type="button"
+                    onClick={() => setMode('reset')}
+                    className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+                >
+                    비밀번호를 잊으셨나요?
+                </button>
                 <button 
                     type="button"
                     onClick={() => setMode('signup')}
@@ -104,21 +150,30 @@ export default function LoginPage() {
         ) : (
           <form action={signupAction} className="mt-8 space-y-4 animate-in fade-in slide-in-from-left-8 duration-300">
              <div className="space-y-4">
-              {/* 1. 아이디 입력 */}
               <div className="relative group">
                 <User className="absolute left-3 top-3 text-zinc-500 group-focus-within:text-blue-500 transition-colors" size={18} />
                 <input
                   type="text"
                   name="username"
-                  placeholder="사용할 아이디 (영문, 숫자)"
+                  placeholder="사용할 아이디"
                   required
                   pattern="[a-zA-Z0-9_]+"
                   title="영문, 숫자, 언더바(_)만 입력 가능합니다"
                   className="w-full rounded-sm border border-zinc-800 bg-zinc-900 py-3 pl-10 pr-4 text-sm text-white outline-none focus:border-blue-500 placeholder:text-zinc-600 transition-colors"
                 />
               </div>
+              
+              <div className="relative group">
+                <Mail className="absolute left-3 top-3 text-zinc-500 group-focus-within:text-blue-500 transition-colors" size={18} />
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="실제 이메일 (비밀번호 찾기용)"
+                  required
+                  className="w-full rounded-sm border border-zinc-800 bg-zinc-900 py-3 pl-10 pr-4 text-sm text-white outline-none focus:border-blue-500 placeholder:text-zinc-600 transition-colors"
+                />
+              </div>
 
-              {/* 2. 비밀번호 입력 */}
               <div className="relative group">
                 <Lock className="absolute left-3 top-3 text-zinc-500 group-focus-within:text-blue-500 transition-colors" size={18} />
                 <input
@@ -128,17 +183,6 @@ export default function LoginPage() {
                   required
                   minLength={6}
                   className="w-full rounded-sm border border-zinc-800 bg-zinc-900 py-3 pl-10 pr-4 text-sm text-white outline-none focus:border-blue-500 placeholder:text-zinc-600 transition-colors"
-                />
-              </div>
-
-              {/* 3. 복구용 이메일 입력 */}
-              <div className="relative group">
-                <ShieldCheck className="absolute left-3 top-3 text-zinc-500 group-focus-within:text-green-500 transition-colors" size={18} />
-                <input
-                  type="email"
-                  name="recovery_email"
-                  placeholder="비밀번호 찾기용 이메일 (선택)"
-                  className="w-full rounded-sm border border-zinc-800 bg-zinc-900 py-3 pl-10 pr-4 text-sm text-white outline-none focus:border-green-500 placeholder:text-zinc-600 transition-colors"
                 />
               </div>
             </div>
