@@ -197,10 +197,12 @@ export default function InventoryPage() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-xl font-bold tracking-tight">
-            {viewMode === 'INVENTORY' ? '식재료 관리' : '식재료 마스터 DB'}
+            {viewMode === 'INVENTORY' ? '내 냉장고 관리' : '식재료 마스터 DB'}
           </h2>
-          <p className="text-zinc-400">
-            {viewMode === 'INVENTORY' ? '냉장고와 펜트리의 재고를 관리하세요.' : '자주 사용하는 식재료 품목을 관리하세요.'}
+          <p className="text-zinc-400 text-sm mt-1 leading-relaxed max-w-2xl">
+            {viewMode === 'INVENTORY' 
+              ? '냉장고와 펜트리의 재고를 꼼꼼하게 관리하세요. 등록된 식재료는 레시피 작성 시 자동으로 연동되며, 요리할 때 필요한 재료의 현황을 실시간으로 확인할 수 있습니다.' 
+              : '자주 사용하는 표준 식재료 품목을 미리 등록해두세요. 내 냉장고에 새로운 식재료를 등록할 때 검색만으로 정보를 빠르게 불러올 수 있어 편리합니다.'}
           </p>
         </div>
         
