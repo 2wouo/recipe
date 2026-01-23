@@ -10,7 +10,7 @@ export type ActionState = {
 }
 
 // 내부적으로 사용할 도메인 (사용자는 몰라도 됨)
-const INTERNAL_DOMAIN = 'recipe.local';
+const INTERNAL_DOMAIN = 'recipe-user.com';
 
 function createEmailFromId(id: string) {
   // 이미 이메일 형식이면 그대로 사용, 아니면 도메인 붙이기
