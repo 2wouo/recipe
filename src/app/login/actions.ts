@@ -103,6 +103,12 @@ export async function signup(prevState: ActionState, formData: FormData): Promis
   return { error: null, success: true, message: '가입이 완료되었습니다!' }
 }
 
+import { getURL } from '@/utils/getURL';
+
+// ... (imports)
+
+// ... (login & signup functions)
+
 export async function resetPassword(prevState: ActionState, formData: FormData): Promise<ActionState> {
   const supabase = await createClient();
   const input = formData.get('input') as string;
@@ -122,8 +128,9 @@ export async function resetPassword(prevState: ActionState, formData: FormData):
     email = profile.email;
   }
 
+  const baseUrl = getURL();
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/reset-password`,
+    redirectTo: `${baseUrl}auth/reset-password`,
   });
 
   if (error) {
