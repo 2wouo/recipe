@@ -2,12 +2,15 @@ import { create } from 'zustand';
 import { Product } from '@/types';
 import { createClient } from '@/utils/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
+import { DEFAULT_PRODUCT_LIST } from '@/utils/defaultProducts';
 
 interface ProductState {
   products: Product[];
   fetchProducts: () => Promise<void>;
   addProduct: (product: Product) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
+  resetToDefaultProducts: () => Promise<void>;
+  deleteAllMyProducts: () => Promise<void>;
   searchProduct: (query: string) => Product[];
 }
 
@@ -75,6 +78,51 @@ export const useProductStore = create<ProductState>((set, get) => ({
     set((state) => ({
         products: state.products.filter((p) => p.id !== id),
     }));
+  },
+
+  resetToDefaultProducts: async () => {
+    const supabase = createClient();
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+
+    if (!confirm('기본 식재료 목록을 추가하시겠습니까? (이미 있는 품목은 유지됩니다)')) return;
+
+    const productsToInsert = DEFAULT_PRODUCT_LIST.map(p => ({
+        id: crypto.randomUUID(),
+        name: p.name,
+        category: p.category,
+        user_id: user.id
+    }));
+
+    const { error } = await supabase.from('products').insert(productsToInsert);
+
+    if (error) {
+        console.error('Error resetting products:', error);
+        alert('기본 목록 추가 실패: ' + error.message);
+        return;
+    }
+
+    await get().fetchProducts();
+    alert('기본 식재료 목록이 추가되었습니다!');
+  },
+
+  deleteAllMyProducts: async () => {
+    const supabase = createClient();
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+
+    if (!confirm('정말로 등록된 모든 품목을 삭제하시겠습니까?')) return;
+
+    const { error } = await supabase.from('products').delete().eq('user_id', user.id);
+
+    if (error) {
+        console.error('Error deleting all products:', error);
+        alert('삭제 실패: ' + error.message);
+        return;
+    }
+
+    set({ products: [] });
+    alert('모든 품목이 삭제되었습니다.');
   },
 
   searchProduct: (query) => {
