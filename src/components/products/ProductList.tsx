@@ -18,6 +18,7 @@ export default function ProductList() {
   const [newCategory, setNewCategory] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
 
   useEffect(() => {
     fetchProducts();
@@ -50,10 +51,12 @@ export default function ProductList() {
     setIsFormOpen(false); // 등록 후 폼 닫기 (선택 사항)
   };
 
-  const filteredProducts = products.filter(p => 
-    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredProducts = products.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          p.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2">
@@ -64,7 +67,7 @@ export default function ProductList() {
                 <Search className="absolute left-3 top-2.5 text-zinc-500" size={16} />
                 <input 
                     className="w-full h-10 rounded-sm border border-zinc-800 bg-zinc-900 pl-9 pr-4 text-sm text-white outline-none focus:border-blue-500 transition-colors"
-                    placeholder="식재료 이름 또는 카테고리 검색..."
+                    placeholder="식재료 이름 검색..."
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                 />
@@ -76,6 +79,33 @@ export default function ProductList() {
                 {isFormOpen ? <X size={16} /> : <Plus size={16} />}
                 {isFormOpen ? '닫기' : '추가'}
             </button>
+        </div>
+
+        {/* Category Tabs */}
+        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+            <button
+                onClick={() => setSelectedCategory('All')}
+                className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                    selectedCategory === 'All' 
+                        ? 'bg-zinc-100 text-zinc-900 border-zinc-100' 
+                        : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-600'
+                }`}
+            >
+                전체
+            </button>
+            {existingCategories.map(cat => (
+                <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        selectedCategory === cat 
+                            ? 'bg-blue-600 text-white border-blue-600' 
+                            : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:border-zinc-600'
+                    }`}
+                >
+                    {cat}
+                </button>
+            ))}
         </div>
 
         <div className="flex justify-end gap-2">
