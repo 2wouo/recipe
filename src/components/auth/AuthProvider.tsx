@@ -24,31 +24,26 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth event:', event);
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        setUser(session.user);
+      } else {
+        setUser(null);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, [checkUser, setUser]);
 
-  // Client-side redirection disabled to prevent loops.
-  // Access control is managed by server-side middleware (if enabled) or RLS policies.
-  /*
   useEffect(() => {
-    console.log('Auth Status - User:', !!user, 'Loading:', loading, 'Path:', pathname);
     if (!loading) {
-      if (!user && pathname !== '/login') {
-        console.log('Redirecting to /login');
+      if (!user && pathname !== '/login' && !pathname.startsWith('/auth')) {
         router.replace('/login');
       } else if (user && pathname === '/login') {
-        console.log('Redirecting to /');
         router.replace('/');
       }
     }
   }, [user, loading, pathname, router]);
-  */
 
-  // Allow rendering even if loading or not logged in
-  /*
   if (loading && pathname !== '/login') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
@@ -56,11 +51,6 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       </div>
     );
   }
-
-  if (!user && pathname !== '/login') {
-    return null;
-  }
-  */
 
   return <>{children}</>;
 }
