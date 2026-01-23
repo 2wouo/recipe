@@ -28,30 +28,15 @@ export default function RecipeDetailModal({ recipe, onClose }: RecipeDetailModal
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 px-4 backdrop-blur-md overflow-y-auto pt-10 pb-10">
       <div className="w-full max-w-2xl rounded-sm border border-zinc-800 bg-zinc-950 p-8 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300 relative my-auto">
-        <div className="flex justify-between items-start mb-2 pr-10">
-            <div className="flex items-center gap-2 text-blue-500 text-xs font-bold uppercase tracking-widest">
-                <ChefHat size={14} />
-                Community Recipe
-            </div>
-            <div className="flex items-center gap-4 text-xs text-zinc-500">
-                <span className="flex items-center gap-1.5"><Eye size={14}/>{recipe.views_count}</span>
-                <button 
-                    onClick={handleLike}
-                    className="flex items-center gap-1.5 hover:text-pink-500 transition-colors group"
-                >
-                    <Heart size={14} className="group-active:scale-125 transition-transform" />
-                    {recipe.likes_count}
-                </button>
-            </div>
-        </div>
-
+        {/* Close Button */}
         <button onClick={onClose} className="absolute right-6 top-6 text-zinc-500 hover:text-white transition-colors z-10">
           <X size={28} />
         </button>
 
+        {/* Header Section */}
         <div className="mb-8">
             <h2 className="text-3xl font-black text-white leading-tight pr-10">{recipe.title}</h2>
-            <div className="mt-4 flex items-center gap-4 text-sm text-zinc-500">
+            <div className="mt-4 flex flex-wrap items-center gap-y-2 gap-x-4 text-sm text-zinc-500">
                 <span className="flex items-center gap-1.5">
                     <div className="h-5 w-5 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden border border-zinc-700">
                         {recipe.author_avatar_url ? (
@@ -62,10 +47,14 @@ export default function RecipeDetailModal({ recipe, onClose }: RecipeDetailModal
                     </div>
                     {recipe.author_name}
                 </span>
-                <span className="flex items-center gap-1.5"><Clock size={14}/>{format(new Date(recipe.created_at), 'yyyy.MM.dd')}</span>
+                <div className="flex items-center gap-4 border-l border-zinc-800 pl-4">
+                    <span className="flex items-center gap-1.5"><Clock size={14}/>{format(new Date(recipe.created_at), 'yyyy.MM.dd')}</span>
+                    <span className="flex items-center gap-1.5"><Eye size={14}/>{recipe.views_count}</span>
+                </div>
             </div>
         </div>
 
+        {/* Content Section */}
         <div className="space-y-8">
             {recipe.description && (
                 <div className="p-4 bg-zinc-900/50 rounded-sm border-l-4 border-blue-600 italic text-zinc-300">
@@ -80,6 +69,7 @@ export default function RecipeDetailModal({ recipe, onClose }: RecipeDetailModal
                         {recipe.ingredients.map((ing, idx) => (
                             <li key={idx} className="flex justify-between text-sm py-1 border-b border-zinc-900/50">
                                 <span className={ing.isRequired ? "font-bold text-blue-400" : "text-zinc-200"}>
+                                    {ing.isRequired && <span className="text-blue-500 mr-1">*</span>}
                                     {ing.name}
                                 </span>
                                 <span className="text-zinc-500">{ing.amount}</span>
@@ -101,7 +91,16 @@ export default function RecipeDetailModal({ recipe, onClose }: RecipeDetailModal
             </div>
         </div>
 
-        <div className="mt-12 flex gap-4">
+        {/* Action Buttons */}
+        <div className="mt-12 flex gap-3">
+            <button 
+                onClick={handleLike}
+                className="h-14 w-14 shrink-0 rounded-sm border border-zinc-800 bg-zinc-900 flex items-center justify-center text-zinc-500 hover:text-pink-500 hover:bg-pink-500/5 transition-all group"
+                title="좋아요"
+            >
+                <Heart size={24} className="group-active:scale-125 transition-transform" />
+                <span className="sr-only">좋아요</span>
+            </button>
             <button 
                 onClick={handleImport}
                 className="flex-1 h-14 rounded-sm bg-blue-600 text-white font-black hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-xl shadow-blue-900/20"
@@ -111,6 +110,12 @@ export default function RecipeDetailModal({ recipe, onClose }: RecipeDetailModal
             </button>
         </div>
 
+        {/* Footer Stats */}
+        <div className="flex justify-end mt-2">
+            <span className="text-[10px] font-bold text-zinc-600 uppercase tracking-tighter">Liked by {recipe.likes_count} people</span>
+        </div>
+
+        {/* Comments Section */}
         <CommentSection recipeId={recipe.id} />
       </div>
     </div>
