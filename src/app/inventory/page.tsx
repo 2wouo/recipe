@@ -446,9 +446,9 @@ export default function InventoryPage() {
                     <div className="mb-2 flex items-start justify-between">
                         <div>
                         <h4 className="font-bold">{item.name}</h4>
-                        {item.detail && (
-                            <p className="text-xs text-zinc-400 mt-0.5">{item.detail}</p>
-                        )}
+                        <p className="text-xs text-zinc-400 mt-0.5 min-h-[1.2em]">
+                            {item.detail?.trim() || '\u00A0'}
+                        </p>
                         <p className="text-xs text-zinc-500 mt-1">{item.quantity || '-'}</p>
                         </div>
                         <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
