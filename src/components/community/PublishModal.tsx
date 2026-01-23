@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Recipe, RecipeVersion } from '@/types';
+import { Recipe, RecipeVersion, Ingredient } from '@/types';
 import { useCommunityStore } from '@/store/useCommunityStore';
-import { X, Send, AlertCircle, Trash2, Plus } from 'lucide-react';
+import { X, Send, AlertCircle, Trash2, Plus, Asterisk } from 'lucide-react';
 
 interface PublishModalProps {
   recipe: Recipe;
@@ -22,7 +22,7 @@ export default function PublishModal({ recipe, version, communityRecipeId, isOpe
 
   const [title, setTitle] = useState(recipe.title);
   const [description, setDescription] = useState(recipe.description || '');
-  const [ingredients, setIngredients] = useState(targetVersion?.ingredients.map(i => ({ ...i })) || []);
+  const [ingredients, setIngredients] = useState<Ingredient[]>(targetVersion?.ingredients.map(i => ({ ...i, isRequired: !!i.isRequired })) || []);
   const [steps, setSteps] = useState([...(targetVersion?.steps || [])]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -31,7 +31,7 @@ export default function PublishModal({ recipe, version, communityRecipeId, isOpe
     if (isOpen) {
         setTitle(recipe.title);
         setDescription(recipe.description || '');
-        setIngredients(targetVersion?.ingredients.map(i => ({ ...i })) || []);
+        setIngredients(targetVersion?.ingredients.map(i => ({ ...i, isRequired: !!i.isRequired })) || []);
         setSteps([...(targetVersion?.steps || [])]);
     }
   }, [recipe, targetVersion, isOpen]);
@@ -70,7 +70,7 @@ export default function PublishModal({ recipe, version, communityRecipeId, isOpe
     setIsSubmitting(false);
   };
 
-  const updateIngredient = (idx: number, field: 'name' | 'amount', val: string) => {
+  const updateIngredient = (idx: number, field: keyof Ingredient, val: any) => {
     const next = [...ingredients];
     next[idx] = { ...next[idx], [field]: val };
     setIngredients(next);
@@ -81,7 +81,7 @@ export default function PublishModal({ recipe, version, communityRecipeId, isOpe
   };
 
   const addIngredient = () => {
-    setIngredients([...ingredients, { name: '', amount: '' }]);
+    setIngredients([...ingredients, { name: '', amount: '', isRequired: false }]);
   };
 
   const updateStep = (idx: number, val: string) => {
@@ -160,6 +160,14 @@ export default function PublishModal({ recipe, version, communityRecipeId, isOpe
                     value={ing.amount}
                     onChange={e => updateIngredient(idx, 'amount', e.target.value)}
                   />
+                  <button 
+                    type="button" 
+                    onClick={() => updateIngredient(idx, 'isRequired', !ing.isRequired)} 
+                    className={`p-1.5 rounded-sm border transition-all ${ing.isRequired ? 'bg-blue-600 border-blue-500 text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}
+                    title={ing.isRequired ? '필수 재료' : '선택 재료'}
+                  >
+                    <Asterisk size={14} />
+                  </button>
                   <button type="button" onClick={() => removeIngredient(idx)} className="text-zinc-600 hover:text-red-500 p-1">
                     <Trash2 size={16} />
                   </button>

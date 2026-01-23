@@ -18,12 +18,15 @@ export interface InventoryItem {
   barcode?: string;
 }
 
+export interface Ingredient {
+  name: string;
+  amount: string;
+  isRequired?: boolean;
+}
+
 export interface RecipeVersion {
   version: string;
-  ingredients: {
-    name: string; // 표준 재료명
-    amount: string;
-  }[];
+  ingredients: Ingredient[];
   steps: string[];
   notes: string;
   memo?: string;
@@ -46,10 +49,7 @@ export interface CommunityRecipe {
   original_recipe_id?: string;
   title: string;
   description: string;
-  ingredients: {
-    name: string;
-    amount: string;
-  }[];
+  ingredients: Ingredient[];
   steps: string[];
   author_id: string;
   author_name?: string;

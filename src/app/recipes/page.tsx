@@ -5,8 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import { useRecipeStore } from '@/store/useRecipeStore';
 import { useInventoryStore } from '@/store/useInventoryStore';
 import { useProductStore } from '@/store/useProductStore';
-import { RecipeVersion } from '@/types';
-import { Plus, Book, History, ChevronRight, Save, Trash2, Copy, CheckCircle2, Circle, Pencil, Star, StickyNote, Lightbulb, Check, AlertCircle, Refrigerator, Box, X, Search, ArrowLeft, Send } from 'lucide-react';
+import { RecipeVersion, Ingredient } from '@/types';
+import { Plus, Book, History, ChevronRight, Save, Trash2, Copy, CheckCircle2, Circle, Pencil, Star, StickyNote, Lightbulb, Check, AlertCircle, Refrigerator, Box, X, Search, ArrowLeft, Send, Asterisk } from 'lucide-react';
 import { format } from 'date-fns';
 import QuickProductAddModal from '@/components/products/QuickProductAddModal';
 import PublishModal from '@/components/community/PublishModal';
@@ -35,6 +35,11 @@ function RecipesContent() {
   const [isVersionSelectOpen, setIsVersionSelectOpen] = useState(false);
   const [selectedVersionForPublish, setSelectedVersionForPublish] = useState<RecipeVersion | undefined>(undefined);
   const [editingVersionIndex, setEditingVersionIndex] = useState<number | null>(null);
+  const [filterType, setFilterType] = useState<'mine' | 'imported'>('mine');
+  
+  // Quick Add Modal State
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [quickAddName, setQuickAddName] = useState('');
   
   const selectedRecipe = recipes.find(r => r.id === selectedRecipeId);
 
@@ -54,11 +59,6 @@ function RecipesContent() {
   
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<'mine' | 'imported'>('mine');
-
-  // Quick Add Modal State
-  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
-  const [quickAddName, setQuickAddName] = useState('');
 
   const filteredRecipes = recipes.filter(recipe => {
     const query = searchQuery.toLowerCase();
@@ -78,7 +78,7 @@ function RecipesContent() {
     version: '',
     notes: '',
     memo: '',
-    ingredients: [{ name: '', amount: '' }],
+    ingredients: [{ name: '', amount: '', isRequired: false }],
     steps: ['']
   });
 
@@ -90,7 +90,7 @@ function RecipesContent() {
         version: nextVersionNum,
         notes: '',
         memo: latest.memo || '',
-        ingredients: [...latest.ingredients], 
+        ingredients: latest.ingredients.map(ing => ({ ...ing, isRequired: !!ing.isRequired })), 
         steps: [...latest.steps]
       });
     } else {
@@ -98,7 +98,7 @@ function RecipesContent() {
         version: '1.0',
         notes: '',
         memo: '',
-        ingredients: [{ name: '', amount: '' }],
+        ingredients: [{ name: '', amount: '', isRequired: false }],
         steps: ['']
       });
     }
@@ -117,7 +117,7 @@ function RecipesContent() {
       currentVersion: '1.0',
       versions: [{
         version: '1.0',
-        ingredients: [{ name: '', amount: '' }],
+        ingredients: [{ name: '', amount: '', isRequired: false }],
         steps: [''],
         notes: '최초 작성',
         memo: '',
@@ -171,7 +171,7 @@ function RecipesContent() {
       version: versionToEdit.version,
       notes: versionToEdit.notes,
       memo: versionToEdit.memo || '',
-      ingredients: [...versionToEdit.ingredients],
+      ingredients: versionToEdit.ingredients.map(ing => ({ ...ing, isRequired: !!ing.isRequired })),
       steps: [...versionToEdit.steps]
     });
     setEditingVersionIndex(index);
@@ -202,14 +202,14 @@ function RecipesContent() {
       setIsPublishModalOpen(true);
   };
 
-  const updateIngredient = (index: number, field: 'name' | 'amount', value: string) => {
+  const updateIngredient = (index: number, field: keyof Ingredient, value: any) => {
     const updated = [...newVersion.ingredients];
     updated[index] = { ...updated[index], [field]: value };
     setNewVersion({ ...newVersion, ingredients: updated });
   };
 
   const addIngredientRow = () => {
-    setNewVersion({ ...newVersion, ingredients: [...newVersion.ingredients, { name: '', amount: '' }] });
+    setNewVersion({ ...newVersion, ingredients: [...newVersion.ingredients, { name: '', amount: '', isRequired: false }] });
   };
 
   const removeIngredientRow = (index: number) => {
@@ -278,7 +278,7 @@ function RecipesContent() {
             <Search className="absolute left-3 top-2.5 text-zinc-500" size={16} />
             <input 
               className="w-full rounded-sm border border-zinc-800 bg-zinc-900 px-3 py-2 pl-9 text-sm outline-none focus:border-blue-500" 
-              placeholder="레시피명, 재료, 메모 검색..." 
+              placeholder="레시피명 검색..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -462,8 +462,16 @@ function RecipesContent() {
                             placeholder="수량" 
                             value={ing.amount} 
                             onChange={e => updateIngredient(idx, 'amount', e.target.value)} 
-                            className="flex-1 rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-zinc-600" 
+                            className="flex-[1.5] rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2 text-sm text-zinc-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all placeholder:text-zinc-600" 
                          />
+                         <button 
+                            type="button" 
+                            onClick={() => updateIngredient(idx, 'isRequired', !ing.isRequired)} 
+                            className={`mt-2 p-1.5 rounded-md border transition-all ${ing.isRequired ? 'bg-blue-600 border-blue-500 text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-500 hover:text-zinc-300'}`}
+                            title={ing.isRequired ? '필수 재료' : '선택 재료'}
+                         >
+                            <Asterisk size={14} />
+                         </button>
                          <button 
                             type="button" 
                             onClick={() => removeIngredientRow(idx)} 
@@ -542,9 +550,26 @@ function RecipesContent() {
                           {v.memo && <div className="rounded-sm p-3 text-sm border border-zinc-700 bg-zinc-900/50 text-zinc-300"><span className="flex items-center gap-1 mb-1 text-xs font-bold text-yellow-500/80"><Lightbulb size={12} />Memo & Tips</span>{v.memo}</div>}
                         </div>
                         <div className="grid gap-8 md:grid-cols-2">
-                          <div><h5 className="mb-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">재료</h5><ul className="space-y-2">{v.ingredients.map((ing, i) => { const stock = checkStock(ing.name); return (
-                            <li key={i} className="flex items-center justify-between border-b border-zinc-800/50 pb-1.5 text-sm"><div className="flex items-center gap-2"><span>{ing.name}</span>{stock && <span className="flex items-center gap-1 rounded-full bg-green-500/10 px-1.5 py-0.5 text-[10px] text-green-500"><Check size={10} />{getStorageIcon(stock.storageType)}</span>}</div><span className="opacity-50">{ing.amount}</span></li>
-                          );})}</ul></div>
+                          <div>
+                            <h5 className="mb-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">재료</h5>
+                            <ul className="space-y-2">
+                                {v.ingredients.map((ing, i) => { 
+                                    const stock = checkStock(ing.name); 
+                                    return (
+                                        <li key={i} className="flex items-center justify-between border-b border-zinc-800/50 pb-1.5 text-sm">
+                                            <div className="flex items-center gap-2">
+                                                <span className={ing.isRequired ? "font-bold text-blue-400" : ""}>
+                                                    {ing.isRequired && <span className="text-blue-500 mr-1">*</span>}
+                                                    {ing.name}
+                                                </span>
+                                                {stock && <span className="flex items-center gap-1 rounded-full bg-green-500/10 px-1.5 py-0.5 text-[10px] text-green-500"><Check size={10} />{getStorageIcon(stock.storageType)}</span>}
+                                            </div>
+                                            <span className="opacity-50">{ing.amount}</span>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                          </div>
                           <div><h5 className="mb-3 text-xs font-bold text-zinc-500 uppercase tracking-wider">조리 순서</h5><div className="space-y-4">{v.steps.map((step, i) => (<div key={i} className="flex gap-3"><div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${isPrimary ? 'bg-pink-600 text-white' : 'bg-zinc-800 text-zinc-400'}`}>{i+1}</div><p className="text-sm leading-relaxed">{step}</p></div>))}</div></div>
                         </div>
                       </div>
