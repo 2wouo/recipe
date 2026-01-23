@@ -76,16 +76,18 @@ export default function SettingsPage() {
         </h3>
         
         <div className="rounded-sm border border-zinc-800 bg-zinc-900/30 divide-y divide-zinc-800 overflow-hidden">
-            <button 
-                onClick={handleSignOut}
-                className="w-full flex items-center justify-between p-4 text-left hover:bg-zinc-900 transition-colors group"
-            >
-                <div className="flex flex-col">
-                    <span className="text-sm font-medium text-zinc-300 group-hover:text-white">로그아웃</span>
-                    <span className="text-[10px] text-zinc-500">현재 기기에서 로그아웃합니다.</span>
-                </div>
-                <LogOut size={16} className="text-zinc-500 group-hover:text-white transition-colors" />
-            </button>
+            <form action="/auth/signout" method="post">
+                <button 
+                    type="submit"
+                    className="w-full flex items-center justify-between p-4 text-left hover:bg-zinc-900 transition-colors group"
+                >
+                    <div className="flex flex-col">
+                        <span className="text-sm font-medium text-zinc-300 group-hover:text-white">로그아웃</span>
+                        <span className="text-[10px] text-zinc-500">현재 기기에서 로그아웃합니다.</span>
+                    </div>
+                    <LogOut size={16} className="text-zinc-500 group-hover:text-white transition-colors" />
+                </button>
+            </form>
             
             <button 
                 className="w-full flex items-center justify-between p-4 text-left hover:bg-red-900/10 transition-colors group"
