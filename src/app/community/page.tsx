@@ -13,11 +13,11 @@ import { useRouter } from 'next/navigation';
 
 export default function CommunityPage() {
   const router = useRouter();
-  const { communityRecipes, myCommunityRecipes, loading, fetchCommunityRecipes, fetchMyCommunityRecipes, deleteCommunityRecipe, incrementViews } = useCommunityStore();
+  const { communityRecipes, myCommunityRecipes, likedRecipes, loading, fetchCommunityRecipes, fetchMyCommunityRecipes, fetchLikedRecipes, deleteCommunityRecipe, incrementViews } = useCommunityStore();
   const { importRecipe } = useRecipeStore();
   const { user } = useAuthStore();
   
-  const [activeTab, setActiveTab] = useState<'all' | 'mine'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'mine' | 'liked'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortOrder] = useState<'created_at' | 'likes_count' | 'views_count'>('created_at');
   
@@ -25,13 +25,14 @@ export default function CommunityPage() {
   const [recipeToEdit, setRecipeToEdit] = useState<CommunityRecipe | null>(null);
 
   useEffect(() => {
-    fetchCommunityRecipes(searchQuery, sortBy);
-    fetchMyCommunityRecipes();
-  }, [fetchCommunityRecipes, fetchMyCommunityRecipes, sortBy]);
+    if (activeTab === 'all') fetchCommunityRecipes(searchQuery, sortBy);
+    else if (activeTab === 'mine') fetchMyCommunityRecipes();
+    else if (activeTab === 'liked') fetchLikedRecipes();
+  }, [fetchCommunityRecipes, fetchMyCommunityRecipes, fetchLikedRecipes, activeTab, sortBy]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchCommunityRecipes(searchQuery, sortBy);
+    if (activeTab === 'all') fetchCommunityRecipes(searchQuery, sortBy);
   };
 
   const handleDelete = async (id: string, e: React.MouseEvent) => {
@@ -48,17 +49,20 @@ export default function CommunityPage() {
 
   const handleSelectRecipe = (recipe: CommunityRecipe) => {
       setSelectedRecipe(recipe);
-      incrementViews(recipe.id); // 조회수 증가
+      incrementViews(recipe.id); 
   };
 
-  const recipesToShow = activeTab === 'all' ? communityRecipes : myCommunityRecipes;
+  const recipesToShow = activeTab === 'all' 
+    ? communityRecipes 
+    : activeTab === 'mine' 
+        ? myCommunityRecipes 
+        : likedRecipes;
 
-  // Convert CommunityRecipe to Recipe for the modal props
   const mockRecipeForEdit: Recipe | null = recipeToEdit ? {
-      id: recipeToEdit.original_recipe_id || '', // or just empty string if null
+      id: recipeToEdit.original_recipe_id || '', 
       title: recipeToEdit.title,
       description: recipeToEdit.description,
-      currentVersion: '1.0', // dummy
+      currentVersion: '1.0', 
       versions: [{
           version: '1.0',
           ingredients: recipeToEdit.ingredients,
@@ -104,6 +108,12 @@ export default function CommunityPage() {
             className={`px-6 py-3 text-sm font-medium transition-colors ${activeTab === 'mine' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-zinc-500 hover:text-white'}`}
             >
             내 게시물 ({myCommunityRecipes.length})
+            </button>
+            <button 
+            onClick={() => setActiveTab('liked')}
+            className={`px-6 py-3 text-sm font-medium transition-colors ${activeTab === 'liked' ? 'border-b-2 border-blue-500 text-blue-500' : 'text-zinc-500 hover:text-white'}`}
+            >
+            좋아요 ({likedRecipes.length})
             </button>
         </div>
 
@@ -198,8 +208,8 @@ export default function CommunityPage() {
                         <Eye size={12} />
                         {recipe.views_count}
                     </div>
-                    <div className="flex items-center gap-1 text-[10px]">
-                        <Heart size={12} />
+                    <div className="flex items-center gap-1 text-[10px] transition-colors">
+                        <Heart size={12} className={recipe.is_liked ? "fill-pink-500 text-pink-500" : ""} />
                         {recipe.likes_count}
                     </div>
                   </div>

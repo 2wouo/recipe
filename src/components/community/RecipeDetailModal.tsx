@@ -95,10 +95,10 @@ export default function RecipeDetailModal({ recipe, onClose }: RecipeDetailModal
         <div className="mt-12 flex gap-3">
             <button 
                 onClick={handleLike}
-                className="h-14 w-14 shrink-0 rounded-sm border border-zinc-800 bg-zinc-900 flex items-center justify-center text-zinc-500 hover:text-pink-500 hover:bg-pink-500/5 transition-all group"
+                className={`h-14 w-14 shrink-0 rounded-sm border border-zinc-800 bg-zinc-900 flex items-center justify-center transition-all group ${recipe.is_liked ? 'text-pink-500 bg-pink-500/10 border-pink-500/20' : 'text-zinc-500 hover:text-pink-500 hover:bg-pink-500/5'}`}
                 title="좋아요"
             >
-                <Heart size={24} className="group-active:scale-125 transition-transform" />
+                <Heart size={24} className={`group-active:scale-125 transition-transform ${recipe.is_liked ? 'fill-pink-500' : ''}`} />
                 <span className="sr-only">좋아요</span>
             </button>
             <button 

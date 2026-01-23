@@ -8,13 +8,15 @@ type OrderBy = 'created_at' | 'likes_count' | 'views_count';
 interface CommunityState {
   communityRecipes: CommunityRecipe[];
   myCommunityRecipes: CommunityRecipe[];
+  likedRecipes: CommunityRecipe[];
   comments: Comment[];
   loading: boolean;
   
   fetchCommunityRecipes: (searchQuery?: string, orderBy?: OrderBy) => Promise<void>;
   fetchMyCommunityRecipes: () => Promise<void>;
-  publishRecipe: (recipe: Omit<CommunityRecipe, 'id' | 'created_at' | 'likes_count' | 'views_count' | 'author_id'>) => Promise<{ success: boolean; error?: string }>;
-  updateCommunityRecipe: (id: string, updates: Partial<Omit<CommunityRecipe, 'id' | 'created_at' | 'likes_count' | 'views_count' | 'author_id'>>) => Promise<{ success: boolean; error?: string }>;
+  fetchLikedRecipes: () => Promise<void>;
+  publishRecipe: (recipe: Omit<CommunityRecipe, 'id' | 'created_at' | 'likes_count' | 'views_count' | 'author_id' | 'is_liked'>) => Promise<{ success: boolean; error?: string }>;
+  updateCommunityRecipe: (id: string, updates: Partial<Omit<CommunityRecipe, 'id' | 'created_at' | 'likes_count' | 'views_count' | 'author_id' | 'is_liked'>>) => Promise<{ success: boolean; error?: string }>;
   deleteCommunityRecipe: (id: string) => Promise<void>;
   
   fetchComments: (recipeId: string) => Promise<void>;
@@ -29,17 +31,30 @@ interface CommunityState {
 export const useCommunityStore = create<CommunityState>((set, get) => ({
   communityRecipes: [],
   myCommunityRecipes: [],
+  likedRecipes: [],
   comments: [],
   loading: false,
 
   fetchCommunityRecipes: async (searchQuery, orderBy = 'created_at') => {
     set({ loading: true });
     const supabase = createClient();
+    const user = useAuthStore.getState().user;
     
+    // Profiles 조인 + 내 좋아요 여부 확인
     let query = supabase
       .from('community_recipes')
-      .select('*, profiles:author_id(username, avatar_url)')
+      .select(`
+        *, 
+        profiles:author_id(username, avatar_url),
+        recipe_likes!left(id)
+      `)
       .order(orderBy, { ascending: false });
+
+    // 내 좋아요 필터링용 (user_id가 내 것인 것만 가져오도록 조인 조건은 줄 수 없으므로 후처리 혹은 .eq 사용)
+    // Supabase의 한계상 조인된 테이블에 내 ID 조건을 걸어야 함
+    if (user) {
+        query = query.filter('recipe_likes.user_id', 'eq', user.id);
+    }
 
     if (searchQuery) {
       query = query.or(`title.ilike.%${searchQuery}%,author_name.ilike.%${searchQuery}%`);
@@ -66,9 +81,58 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
         author_avatar_url: row.profiles?.avatar_url,
         created_at: row.created_at,
         likes_count: row.likes_count || 0,
-        views_count: row.views_count || 0
+        views_count: row.views_count || 0,
+        is_liked: (row.recipe_likes || []).length > 0
       })),
       loading: false 
+    });
+  },
+
+  fetchLikedRecipes: async () => {
+    const supabase = createClient();
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+
+    // 내가 좋아요 누른 레시피 ID 목록 먼저 가져오기
+    const { data: likes } = await supabase
+        .from('recipe_likes')
+        .select('recipe_id')
+        .eq('user_id', user.id);
+    
+    const recipeIds = likes?.map(l => l.recipe_id) || [];
+    if (recipeIds.length === 0) {
+        set({ likedRecipes: [] });
+        return;
+    }
+
+    // 해당 ID들의 레시피 정보 가져오기
+    const { data, error } = await supabase
+        .from('community_recipes')
+        .select('*, profiles:author_id(username, avatar_url)')
+        .in('id', recipeIds)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching liked recipes:', error);
+        return;
+    }
+
+    set({ 
+        likedRecipes: (data || []).map((row: any) => ({
+            id: row.id,
+            original_recipe_id: row.original_recipe_id,
+            title: row.title,
+            description: row.description,
+            ingredients: row.ingredients,
+            steps: row.steps,
+            author_id: row.author_id,
+            author_name: row.profiles?.username || row.author_name,
+            author_avatar_url: row.profiles?.avatar_url,
+            created_at: row.created_at,
+            likes_count: row.likes_count || 0,
+            views_count: row.views_count || 0,
+            is_liked: true
+        }))
     });
   },
 
@@ -79,7 +143,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
 
     const { data, error } = await supabase
       .from('community_recipes')
-      .select('*, profiles:author_id(username, avatar_url)')
+      .select('*, profiles:author_id(username, avatar_url), recipe_likes!left(id)')
       .eq('author_id', user.id)
       .order('created_at', { ascending: false });
 
@@ -101,7 +165,8 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
         author_avatar_url: row.profiles?.avatar_url,
         created_at: row.created_at,
         likes_count: row.likes_count || 0,
-        views_count: row.views_count || 0
+        views_count: row.views_count || 0,
+        is_liked: (row.recipe_likes || []).length > 0
       }))
     });
   },
@@ -130,8 +195,9 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
         ...data,
         author_name: (data as any).profiles?.username || (data as any).author_name,
         author_avatar_url: (data as any).profiles?.avatar_url,
-        likes_count: (data as any).likes_count || 0,
-        views_count: (data as any).views_count || 0
+        likes_count: 0,
+        views_count: 0,
+        is_liked: false
     } as CommunityRecipe;
 
     set(state => ({
@@ -176,7 +242,8 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
 
     set(state => ({
       communityRecipes: state.communityRecipes.filter(r => r.id !== id),
-      myCommunityRecipes: state.myCommunityRecipes.filter(r => r.id !== id)
+      myCommunityRecipes: state.myCommunityRecipes.filter(r => r.id !== id),
+      likedRecipes: state.likedRecipes.filter(r => r.id !== id)
     }));
   },
 
@@ -254,9 +321,11 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
 
   fetchRecipesByAuthor: async (authorId) => {
     const supabase = createClient();
+    const user = useAuthStore.getState().user;
+    
     const { data, error } = await supabase
       .from('community_recipes')
-      .select('*, profiles:author_id(username, avatar_url)')
+      .select('*, profiles:author_id(username, avatar_url), recipe_likes!left(id)')
       .eq('author_id', authorId)
       .order('created_at', { ascending: false });
 
@@ -277,25 +346,45 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
       author_avatar_url: row.profiles?.avatar_url,
       created_at: row.created_at,
       likes_count: row.likes_count || 0,
-      views_count: row.views_count || 0
+      views_count: row.views_count || 0,
+      is_liked: (row.recipe_likes || []).some((l: any) => l.user_id === user?.id)
     }));
   },
 
   toggleLike: async (id) => {
     const supabase = createClient();
-    const { error } = await supabase.rpc('increment_likes', { recipe_id: id });
+    const user = useAuthStore.getState().user;
+    if (!user) {
+        alert('로그인이 필요합니다.');
+        return;
+    }
+
+    const { data, error } = await supabase.rpc('toggle_recipe_like', { 
+        target_recipe_id: id,
+        target_user_id: user.id
+    });
+
     if (error) {
         console.error('Error toggling like:', error);
         return;
     }
     
+    const { liked } = data;
+
     // Update local state
     const updateLocal = (recipes: CommunityRecipe[]) => 
-        recipes.map(r => r.id === id ? { ...r, likes_count: r.likes_count + 1 } : r);
+        recipes.map(r => r.id === id ? { 
+            ...r, 
+            likes_count: liked ? r.likes_count + 1 : r.likes_count - 1,
+            is_liked: liked
+        } : r);
     
     set(state => ({
         communityRecipes: updateLocal(state.communityRecipes),
-        myCommunityRecipes: updateLocal(state.myCommunityRecipes)
+        myCommunityRecipes: updateLocal(state.myCommunityRecipes),
+        likedRecipes: liked 
+            ? [...state.likedRecipes, state.communityRecipes.find(r => r.id === id)!]
+            : state.likedRecipes.filter(r => r.id !== id)
     }));
   },
 
@@ -313,7 +402,8 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
     
     set(state => ({
         communityRecipes: updateLocal(state.communityRecipes),
-        myCommunityRecipes: updateLocal(state.myCommunityRecipes)
+        myCommunityRecipes: updateLocal(state.myCommunityRecipes),
+        likedRecipes: updateLocal(state.likedRecipes)
     }));
   }
 }));
