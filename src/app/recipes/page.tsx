@@ -308,7 +308,7 @@ function RecipesContent() {
             </div>
           </form>
         )}
-        <div className="flex-1 space-y-2 overflow-y-auto pr-2">
+        <div className="flex-1 space-y-2 overflow-y-auto">
           {filteredRecipes.length > 0 ? (
             filteredRecipes.map((recipe) => {
               return (
