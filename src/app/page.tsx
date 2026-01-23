@@ -118,16 +118,8 @@ export default function Home() {
                                 className="flex items-center justify-between w-full h-10 px-4 rounded-md bg-blue-600/10 text-blue-500 font-bold text-xs hover:bg-blue-600 hover:text-white transition-all group/btn"
                             >
                                 상세 레시피 보기
-                                <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+                                <ArrowRight size={14} className="group/btn:translate-x-1 transition-transform" />
                             </Link>
-                        </div>
-                        
-                        {/* Thin progress line at the bottom */}
-                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-zinc-800">
-                            <div 
-                                className="h-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" 
-                                style={{ width: `${((rec.matchedCount || 0) / (rec.totalCount || 1)) * 100}%` }}
-                            ></div>
                         </div>
                     </div>
                 ))}
