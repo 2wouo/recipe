@@ -16,7 +16,6 @@ export async function login(prevState: ActionState, formData: FormData): Promise
   const password = formData.get('password') as string
 
   // 1. 아이디로 이메일 찾기
-  // profiles 테이블은 RLS 정책에 의해 누구나 조회 가능해야 함 (또는 서비스 키 사용)
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select('email')
@@ -24,7 +23,6 @@ export async function login(prevState: ActionState, formData: FormData): Promise
     .single()
 
   if (profileError || !profile) {
-    // 아이디가 없으면 에러
     return { error: '존재하지 않는 아이디입니다.', success: false, message: null }
   }
 
@@ -46,10 +44,10 @@ export async function signup(prevState: ActionState, formData: FormData): Promis
   const supabase = await createClient()
 
   const username = formData.get('username') as string
-  const email = formData.get('email') as string // 진짜 이메일
+  const email = formData.get('email') as string
   const password = formData.get('password') as string
 
-  // 아이디 중복 체크
+  // 1. 아이디 중복 체크 (DB)
   const { data: existingUser } = await supabase
     .from('profiles')
     .select('username')
@@ -60,48 +58,57 @@ export async function signup(prevState: ActionState, formData: FormData): Promis
     return { error: '이미 사용 중인 아이디입니다.', success: false, message: null }
   }
 
-  // 1. Supabase Auth 회원가입 (진짜 이메일 사용)
+  // 2. Supabase Auth 회원가입
+  // 주의: 이미 존재하는 이메일이라면 Supabase가 에러를 리턴하지 않고 가짜 성공 응답을 줄 수도 있음 (보안 설정에 따라)
+  // 하지만 email confirmation이 꺼져 있다면 에러를 리턴할 것임.
   const { error, data } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: {
-        display_name: username,
         username,
+        display_name: username,
       },
     },
   })
 
   if (error) {
+    console.error('Signup Error:', error);
+    // 에러 메시지가 'Anonymous sign-ins are disabled'인 경우, 이메일이 이미 존재할 가능성이 높음
+    if (error.message.includes('Anonymous')) {
+       return { error: '이미 가입된 이메일이거나, 회원가입 설정 오류입니다.', success: false, message: null }
+    }
     return { error: error.message, success: false, message: null }
   }
 
   if (data?.user) {
-    // 2. profiles 테이블에 아이디 매핑 저장
+    // 3. profiles 테이블에 아이디 매핑 저장
+    // 만약 이미 Auth에는 있는데 Profile이 없는 경우(이전 시도 실패 등), insert가 성공해야 함.
     const { error: profileError } = await supabase
       .from('profiles')
       .insert({ id: data.user.id, username, email })
     
     if (profileError) {
       console.error('Profile creation failed:', profileError);
-      // 심각한 에러지만, Auth는 성공했으므로 일단 넘어갈 수도 있음.
-      // 하지만 로그인이 안 되므로 에러 처리하는 게 맞음.
-      return { error: '계정 생성 중 오류가 발생했습니다. 관리자에게 문의하세요.', success: false, message: null }
+      // 이미 프로필이 있다면 무시 (혹시 모를 재시도)
+      if (profileError.code !== '23505') { // unique violation 아님
+         return { error: '프로필 생성 실패. 관리자에게 문의하세요.', success: false, message: null }
+      }
     }
+  } else {
+      // User data가 없는 경우 (보통 이메일 인증 대기 상태일 때)
+      return { error: '회원가입 요청은 되었으나 사용자 정보를 받아오지 못했습니다.', success: false, message: null }
   }
 
-  // 이메일 인증이 꺼져있다면 바로 로그인됨
   return { error: null, success: true, message: '가입이 완료되었습니다!' }
 }
 
-// 비밀번호 찾기 (이메일 발송)
 export async function resetPassword(prevState: ActionState, formData: FormData): Promise<ActionState> {
   const supabase = await createClient();
-  const input = formData.get('input') as string; // 아이디 또는 이메일
+  const input = formData.get('input') as string;
 
   let email = input;
 
-  // 입력값이 이메일 형식이 아니라면 아이디로 간주하고 이메일 찾기
   if (!input.includes('@')) {
     const { data: profile } = await supabase
       .from('profiles')
@@ -115,7 +122,6 @@ export async function resetPassword(prevState: ActionState, formData: FormData):
     email = profile.email;
   }
 
-  // 비밀번호 재설정 메일 발송
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/reset-password`,
   });
