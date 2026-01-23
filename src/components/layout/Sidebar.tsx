@@ -4,17 +4,23 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, Refrigerator, BookOpen, Settings, List, LogOut } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
+import { useEffect, useState } from 'react';
 
 const menuItems = [
   { name: '대시보드', href: '/', icon: LayoutDashboard },
   { name: '재고 관리', href: '/inventory', icon: Refrigerator },
   { name: '레시피 기록', href: '/recipes', icon: BookOpen },
-  { name: '식재료 마스터', href: '/products', icon: List }, // Added
+  { name: '식재료 마스터', href: '/products', icon: List },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { signOut, user } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <aside className="hidden md:flex fixed left-0 top-0 h-screen w-64 flex-col border-r border-zinc-800 bg-zinc-950 p-6 z-40">
@@ -50,8 +56,8 @@ export default function Sidebar() {
       <div className="space-y-1 border-t border-zinc-800 pt-6">
         <div className="px-3 py-2 mb-2">
           <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Account</p>
-          <p className="text-xs text-zinc-300 truncate font-medium mt-1">
-            {user?.user_metadata?.display_name || user?.email || 'Guest'}
+          <p className="text-xs text-zinc-300 truncate font-medium mt-1 min-h-[1.5em]">
+            {mounted ? (user?.user_metadata?.display_name || user?.email || 'Guest') : ''}
           </p>
         </div>
         <Link 
