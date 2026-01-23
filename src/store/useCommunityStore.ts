@@ -14,13 +14,13 @@ interface CommunityState {
   publishRecipe: (recipe: Omit<CommunityRecipe, 'id' | 'created_at' | 'likes_count' | 'author_id'>) => Promise<{ success: boolean; error?: string }>;
   updateCommunityRecipe: (id: string, updates: Partial<Omit<CommunityRecipe, 'id' | 'created_at' | 'likes_count' | 'author_id'>>) => Promise<{ success: boolean; error?: string }>;
   deleteCommunityRecipe: (id: string) => Promise<void>;
-  toggleLike: (id: string) => Promise<void>;
   
   fetchComments: (recipeId: string) => Promise<void>;
-  addComment: (recipeId: string, content: string) => Promise<void>;
+  addComment: (recipeId: string, content: string, parentId?: string) => Promise<void>;
   deleteComment: (commentId: string) => Promise<void>;
   
   fetchRecipesByAuthor: (authorId: string) => Promise<CommunityRecipe[]>;
+  toggleLike: (id: string) => Promise<void>;
 }
 
 export const useCommunityStore = create<CommunityState>((set, get) => ({
@@ -28,87 +28,6 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
   myCommunityRecipes: [],
   comments: [],
   loading: false,
-
-  fetchRecipesByAuthor: async (authorId) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('community_recipes')
-      .select('*')
-      .eq('author_id', authorId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching author recipes:', error);
-      return [];
-    }
-
-    return (data || []).map(row => ({
-      id: row.id,
-      original_recipe_id: row.original_recipe_id,
-      title: row.title,
-      description: row.description,
-      ingredients: row.ingredients,
-      steps: row.steps,
-      author_id: row.author_id,
-      author_name: row.author_name,
-      // author_avatar_url: row.author_avatar_url, // If we added this column
-      created_at: row.created_at,
-      likes_count: row.likes_count
-    }));
-  },
-
-  fetchComments: async (recipeId) => {
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('comments')
-      .select('*')
-      .eq('recipe_id', recipeId)
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      console.error('Error fetching comments:', error);
-      return;
-    }
-    
-    set({ comments: data as Comment[] });
-  },
-
-  addComment: async (recipeId, content) => {
-    const supabase = createClient();
-    const user = useAuthStore.getState().user;
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('comments')
-      .insert({
-        recipe_id: recipeId,
-        user_id: user.id,
-        user_name: user.user_metadata?.display_name || user.email?.split('@')[0] || '익명',
-        content
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error adding comment:', error);
-      alert('댓글 등록 실패: ' + error.message);
-      return;
-    }
-
-    set(state => ({ comments: [...state.comments, data as Comment] }));
-  },
-
-  deleteComment: async (commentId) => {
-    const supabase = createClient();
-    const { error } = await supabase.from('comments').delete().eq('id', commentId);
-
-    if (error) {
-      console.error('Error deleting comment:', error);
-      return;
-    }
-
-    set(state => ({ comments: state.comments.filter(c => c.id !== commentId) }));
-  },
 
   fetchCommunityRecipes: async (searchQuery) => {
     set({ loading: true });
@@ -247,8 +166,89 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
     }));
   },
 
-  toggleLike: async (id) => {
+  fetchComments: async (recipeId) => {
     const supabase = createClient();
-    // RPC increment logic
+    const { data, error } = await supabase
+      .from('comments')
+      .select('*')
+      .eq('recipe_id', recipeId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching comments:', error);
+      return;
+    }
+    
+    set({ comments: data as Comment[] });
+  },
+
+  addComment: async (recipeId, content, parentId) => {
+    const supabase = createClient();
+    const user = useAuthStore.getState().user;
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('comments')
+      .insert({
+        recipe_id: recipeId,
+        parent_id: parentId || null,
+        user_id: user.id,
+        user_name: user.user_metadata?.display_name || user.email?.split('@')[0] || '익명',
+        user_avatar_url: user.user_metadata?.avatar_url, // 아바타 저장
+        content
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding comment:', error);
+      alert('댓글 등록 실패: ' + error.message);
+      return;
+    }
+
+    set(state => ({ comments: [...state.comments, data as Comment] }));
+  },
+
+  deleteComment: async (commentId) => {
+    const supabase = createClient();
+    const { error } = await supabase.from('comments').delete().eq('id', commentId);
+
+    if (error) {
+      console.error('Error deleting comment:', error);
+      return;
+    }
+
+    set(state => ({ comments: state.comments.filter(c => c.id !== commentId) }));
+  },
+
+  fetchRecipesByAuthor: async (authorId) => {
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('community_recipes')
+      .select('*')
+      .eq('author_id', authorId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching author recipes:', error);
+      return [];
+    }
+
+    return (data || []).map(row => ({
+      id: row.id,
+      original_recipe_id: row.original_recipe_id,
+      title: row.title,
+      description: row.description,
+      ingredients: row.ingredients,
+      steps: row.steps,
+      author_id: row.author_id,
+      author_name: row.author_name,
+      created_at: row.created_at,
+      likes_count: row.likes_count
+    }));
+  },
+
+  toggleLike: async (id) => {
+    // 좋아요 로직 (생략 - RPC 필요)
   }
 }));

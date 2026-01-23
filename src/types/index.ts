@@ -61,9 +61,10 @@ export interface CommunityRecipe {
 export interface Comment {
   id: string;
   recipe_id: string;
+  parent_id?: string; // 대댓글용
   user_id: string;
   user_name: string;
-  user_avatar_url?: string; // 댓글 작성자 프사
+  user_avatar_url?: string;
   content: string;
   created_at: string;
 }
