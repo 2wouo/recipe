@@ -214,7 +214,7 @@ function ExpiringItemRow({ item, today }: { item: any, today: Date }) {
     
     const getStatusStyles = () => {
         if (days < 0) return 'text-red-500 border-red-500/20 bg-red-500/5';
-        if (days <= 7) return 'text-yellow-500/80 border-yellow-500/10 bg-yellow-500/5';
+        if (days <= 7) return 'text-amber-400 border-amber-400/20 bg-amber-400/5';
         return 'text-blue-400 border-blue-500/10 bg-zinc-950';
     };
 
