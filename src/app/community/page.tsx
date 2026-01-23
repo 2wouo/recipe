@@ -8,7 +8,7 @@ import { Search, Heart, User, Clock, Trash2, BookOpen, ChevronRight, X, ChefHat,
 import { format } from 'date-fns';
 import { CommunityRecipe, Recipe } from '@/types';
 import PublishModal from '@/components/community/PublishModal';
-import CommentSection from '@/components/community/CommentSection';
+import RecipeDetailModal from '@/components/community/RecipeDetailModal';
 import { useRouter } from 'next/navigation';
 
 export default function CommunityPage() {
@@ -43,11 +43,6 @@ export default function CommunityPage() {
       setRecipeToEdit(recipe);
   };
 
-  const handleImport = async (recipe: CommunityRecipe) => {
-      await importRecipe(recipe);
-      setSelectedRecipe(null);
-  };
-
   const recipesToShow = activeTab === 'all' ? communityRecipes : myCommunityRecipes;
 
   // Convert CommunityRecipe to Recipe for the modal props
@@ -67,6 +62,7 @@ export default function CommunityPage() {
 
   return (
     <div className="space-y-8 pb-20">
+      {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
@@ -191,73 +187,10 @@ export default function CommunityPage() {
 
       {/* Recipe Detail Modal */}
       {selectedRecipe && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 px-4 backdrop-blur-md overflow-y-auto pt-10 pb-10">
-          <div className="w-full max-w-2xl rounded-sm border border-zinc-800 bg-zinc-950 p-8 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300 relative my-auto">
-            <button 
-              onClick={() => setSelectedRecipe(null)}
-              className="absolute right-6 top-6 text-zinc-500 hover:text-white"
-            >
-              <X size={28} />
-            </button>
-
-            <div className="mb-8">
-                <div className="flex items-center gap-2 text-blue-500 text-xs font-bold uppercase tracking-widest mb-2">
-                    <ChefHat size={14} />
-                    Community Recipe
-                </div>
-                <h2 className="text-3xl font-black text-white leading-tight">{selectedRecipe.title}</h2>
-                <div className="mt-4 flex items-center gap-4 text-sm text-zinc-500">
-                    <span className="flex items-center gap-1.5"><User size={14}/>{selectedRecipe.author_name}</span>
-                    <span className="flex items-center gap-1.5"><Clock size={14}/>{format(new Date(selectedRecipe.created_at), 'yyyy.MM.dd')}</span>
-                </div>
-            </div>
-
-            <div className="space-y-8">
-                {selectedRecipe.description && (
-                    <div className="p-4 bg-zinc-900/50 rounded-sm border-l-4 border-blue-600 italic text-zinc-300">
-                        "{selectedRecipe.description}"
-                    </div>
-                )}
-
-                <div className="grid gap-8 md:grid-cols-2">
-                    <div>
-                        <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4 border-b border-zinc-800 pb-2">재료</h4>
-                        <ul className="space-y-2">
-                            {selectedRecipe.ingredients.map((ing, idx) => (
-                                <li key={idx} className="flex justify-between text-sm py-1 border-b border-zinc-900/50">
-                                    <span className="text-zinc-200">{ing.name}</span>
-                                    <span className="text-zinc-500">{ing.amount}</span>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4 border-b border-zinc-800 pb-2">조리 순서</h4>
-                        <div className="space-y-4">
-                            {selectedRecipe.steps.map((step, idx) => (
-                                <div key={idx} className="flex gap-3">
-                                    <span className="h-5 w-5 rounded-full bg-blue-600/20 text-blue-500 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">{idx+1}</span>
-                                    <p className="text-sm text-zinc-300 leading-relaxed">{step}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="mt-12 flex gap-4">
-                <button 
-                    onClick={() => handleImport(selectedRecipe)}
-                    className="flex-1 h-14 rounded-sm bg-blue-600 text-white font-black hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-xl shadow-blue-900/20"
-                >
-                    <BookOpen size={20} />
-                    내 보관함에 담기
-                </button>
-            </div>
-
-            <CommentSection recipeId={selectedRecipe.id} />
-          </div>
-        </div>
+        <RecipeDetailModal 
+            recipe={selectedRecipe} 
+            onClose={() => setSelectedRecipe(null)} 
+        />
       )}
     </div>
   );
