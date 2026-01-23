@@ -151,10 +151,10 @@ export default function PublishModal({ recipe, version, communityRecipeId, isOpe
                   <button 
                     type="button" 
                     onClick={() => updateIngredient(idx, 'isRequired', !ing.isRequired)} 
-                    className={`mt-1.5 h-6 w-6 shrink-0 rounded-md border transition-all flex items-center justify-center ${ing.isRequired ? 'bg-blue-600 border-blue-500 text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-600 hover:text-zinc-400'}`}
+                    className={`mt-1 h-8 w-8 shrink-0 rounded-md border transition-all flex items-center justify-center ${ing.isRequired ? 'bg-blue-600 border-blue-500 text-white' : 'bg-zinc-900 border-zinc-800 text-zinc-600 hover:text-zinc-400'}`}
                     title={ing.isRequired ? '필수 재료' : '선택 재료'}
                   >
-                    <Asterisk size={14} />
+                    <Asterisk size={16} />
                   </button>
                   <input 
                     placeholder="재료명"
