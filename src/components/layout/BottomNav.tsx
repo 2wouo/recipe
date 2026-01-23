@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Refrigerator, BookOpen, List } from 'lucide-react';
+import { LayoutDashboard, Refrigerator, BookOpen, List, Settings } from 'lucide-react';
 
 const navItems = [
   { name: '홈', href: '/', icon: LayoutDashboard },
   { name: '재고', href: '/inventory', icon: Refrigerator },
   { name: '레시피', href: '/recipes', icon: BookOpen },
   { name: '식재료', href: '/products', icon: List },
+  { name: '설정', href: '/settings', icon: Settings },
 ];
 
 export default function BottomNav() {

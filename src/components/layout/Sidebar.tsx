@@ -50,12 +50,19 @@ export default function Sidebar() {
       <div className="space-y-1 border-t border-zinc-800 pt-6">
         <div className="px-3 py-2 mb-2">
           <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">Account</p>
-          <p className="text-xs text-zinc-300 truncate font-medium mt-1">{user?.email}</p>
+          <p className="text-xs text-zinc-300 truncate font-medium mt-1">
+            {user?.user_metadata?.display_name || user?.email || 'Guest'}
+          </p>
         </div>
-        <button className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium text-zinc-400 transition-colors hover:bg-zinc-900 hover:text-white">
+        <Link 
+          href="/settings"
+          className={`flex w-full items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium transition-colors ${
+            pathname === '/settings' ? 'bg-blue-600/10 text-blue-500' : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'
+          }`}
+        >
           <Settings size={18} />
           설정
-        </button>
+        </Link>
         <button 
           onClick={() => signOut()}
           className="flex w-full items-center gap-3 rounded-sm px-3 py-2 text-sm font-medium text-red-500/70 transition-colors hover:bg-red-500/10 hover:text-red-500"

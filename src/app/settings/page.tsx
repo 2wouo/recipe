@@ -1,0 +1,92 @@
+'use client';
+
+import { useAuthStore } from '@/store/useAuthStore';
+import { useRouter } from 'next/navigation';
+import { LogOut, User, Shield, Trash2, Mail } from 'lucide-react';
+
+export default function SettingsPage() {
+  const { user, signOut } = useAuthStore();
+  const router = useRouter();
+
+  const handleSignOut = async () => {
+    await signOut();
+    window.location.href = '/login';
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4">
+      <div>
+        <h2 className="text-xl font-bold tracking-tight">설정</h2>
+        <p className="text-zinc-400">계정 및 앱 설정을 관리하세요.</p>
+      </div>
+
+      {/* 내 프로필 카드 */}
+      <div className="rounded-sm border border-zinc-800 bg-zinc-900/50 p-6">
+        <h3 className="text-sm font-medium text-zinc-400 mb-6 flex items-center gap-2">
+          <User size={16} />
+          내 프로필
+        </h3>
+        
+        <div className="flex items-center gap-4">
+          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-white flex items-center justify-center font-bold text-2xl shadow-lg shadow-blue-900/20">
+             {user?.user_metadata?.display_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+          </div>
+          <div>
+            <p className="text-lg font-bold text-white">
+              {user?.user_metadata?.display_name || '사용자'}
+            </p>
+            <div className="flex items-center gap-1.5 mt-1 text-sm text-zinc-500">
+               <span className="text-zinc-600">ID:</span>
+               <span className="font-mono text-zinc-400">
+                 {user?.user_metadata?.username || user?.email?.split('@')[0]}
+               </span>
+            </div>
+            {/* 실제 이메일 (복구용) 표시 */}
+            {user?.user_metadata?.recovery_email && (
+                <p className="text-xs text-zinc-600 mt-1 flex items-center gap-1">
+                    <Mail size={10} />
+                    {user.user_metadata.recovery_email}
+                </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* 계정 관리 */}
+      <div className="space-y-4">
+         <h3 className="text-sm font-medium text-zinc-400 flex items-center gap-2">
+          <Shield size={16} />
+          계정 관리
+        </h3>
+        
+        <div className="rounded-sm border border-zinc-800 bg-zinc-900/30 divide-y divide-zinc-800 overflow-hidden">
+            <button 
+                onClick={handleSignOut}
+                className="w-full flex items-center justify-between p-4 text-left hover:bg-zinc-900 transition-colors group"
+            >
+                <div className="flex flex-col">
+                    <span className="text-sm font-medium text-zinc-300 group-hover:text-white">로그아웃</span>
+                    <span className="text-[10px] text-zinc-500">현재 기기에서 로그아웃합니다.</span>
+                </div>
+                <LogOut size={16} className="text-zinc-500 group-hover:text-white transition-colors" />
+            </button>
+            
+            <button 
+                className="w-full flex items-center justify-between p-4 text-left hover:bg-red-900/10 transition-colors group"
+                onClick={() => alert('데이터 보호를 위해 현재는 직접 탈퇴가 불가능합니다. 관리자에게 문의해주세요.')}
+            >
+                <div className="flex flex-col">
+                    <span className="text-sm font-medium text-zinc-300 group-hover:text-red-400">회원 탈퇴</span>
+                    <span className="text-[10px] text-zinc-500">모든 데이터를 영구적으로 삭제합니다.</span>
+                </div>
+                <Trash2 size={16} className="text-zinc-500 group-hover:text-red-400 transition-colors" />
+            </button>
+        </div>
+      </div>
+      
+      <div className="text-center pt-10 pb-4">
+          <p className="text-xs font-mono text-zinc-700">Smart Kitchen Log v0.1.2</p>
+      </div>
+    </div>
+  );
+}
