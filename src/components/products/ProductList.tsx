@@ -12,7 +12,7 @@ const DEFAULT_CATEGORIES = [
 ];
 
 export default function ProductList() {
-  const { products, addProduct, deleteProduct, fetchProducts, resetToDefaultProducts, deleteAllMyProducts } = useProductStore();
+  const { products, addProduct, deleteProduct, fetchProducts, resetToDefaultProducts, deleteDefaultProducts, deleteAllMyProducts } = useProductStore();
   const [newName, setNewName] = useState('');
   const [newCategory, setNewCategory] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -62,6 +62,7 @@ export default function ProductList() {
       {/* Header & Controls */}
       <div className="flex flex-col gap-4">
         <div className="flex gap-2 items-center justify-between">
+            {/* Search Input */}
             <div className="relative flex-1">
                 <Search className="absolute left-3 top-2.5 text-zinc-500" size={16} />
                 <input 
@@ -107,7 +108,7 @@ export default function ProductList() {
             ))}
         </div>
 
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2 pt-2 border-t border-zinc-800/50">
             <button 
                 onClick={resetToDefaultProducts}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-blue-600/10 text-blue-500 text-[10px] font-bold hover:bg-blue-600/20 transition-colors"
@@ -116,11 +117,18 @@ export default function ProductList() {
                 기본 목록 채우기
             </button>
             <button 
+                onClick={deleteDefaultProducts}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-orange-600/10 text-orange-500 text-[10px] font-bold hover:bg-orange-600/20 transition-colors"
+            >
+                <Trash2 size={12} />
+                기본 목록만 삭제
+            </button>
+            <button 
                 onClick={deleteAllMyProducts}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-red-600/10 text-red-500 text-[10px] font-bold hover:bg-red-600/20 transition-colors"
             >
                 <Eraser size={12} />
-                목록 전체 삭제
+                전체 초기화
             </button>
         </div>
       </div>
