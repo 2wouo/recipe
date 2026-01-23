@@ -108,27 +108,6 @@ export default function CommentSection({ recipeId }: CommentSectionProps) {
                     </button>
                 </div>
             )}
-
-            {/* Reply Input */}
-            {replyingTo === comment.id && (
-                <form onSubmit={(e) => handleReplySubmit(e, comment.id)} className="flex gap-2 mt-3 animate-in fade-in slide-in-from-top-1">
-                    <div className="text-zinc-600 pt-2"><CornerDownRight size={16} /></div>
-                    <input 
-                        autoFocus
-                        className="flex-1 h-8 rounded-sm border border-zinc-800 bg-zinc-900 px-3 text-xs text-white outline-none focus:border-blue-500 transition-colors placeholder:text-zinc-600"
-                        placeholder="답글을 입력하세요..."
-                        value={replyContent}
-                        onChange={e => setReplyContent(e.target.value)}
-                    />
-                    <button 
-                        type="submit"
-                        disabled={isSubmitting || !replyContent.trim()}
-                        className="h-8 px-3 rounded-sm bg-zinc-800 text-zinc-300 hover:bg-blue-600 hover:text-white disabled:opacity-50 transition-colors text-xs"
-                    >
-                        등록
-                    </button>
-                </form>
-            )}
         </div>
     </div>
   );
@@ -146,10 +125,34 @@ export default function CommentSection({ recipeId }: CommentSectionProps) {
           rootComments.map((comment) => (
             <div key={comment.id}>
                 <CommentItem comment={comment} />
-                {/* Replies */}
+                
+                {/* Replies rendered first */}
                 {getReplies(comment.id).map(reply => (
                     <CommentItem key={reply.id} comment={reply} isReply={true} />
                 ))}
+
+                {/* Reply Input moved here - After all replies */}
+                {replyingTo === comment.id && (
+                    <div className="ml-10 mt-3 border-l-2 border-zinc-800 pl-4">
+                        <form onSubmit={(e) => handleReplySubmit(e, comment.id)} className="flex gap-2 animate-in fade-in slide-in-from-top-1">
+                            <div className="text-zinc-600 pt-2"><CornerDownRight size={16} /></div>
+                            <input 
+                                autoFocus
+                                className="flex-1 h-8 rounded-sm border border-zinc-800 bg-zinc-900 px-3 text-xs text-white outline-none focus:border-blue-500 transition-colors placeholder:text-zinc-600"
+                                placeholder="답글을 입력하세요..."
+                                value={replyContent}
+                                onChange={e => setReplyContent(e.target.value)}
+                            />
+                            <button 
+                                type="submit"
+                                disabled={isSubmitting || !replyContent.trim()}
+                                className="h-8 px-3 rounded-sm bg-zinc-800 text-zinc-300 hover:bg-blue-600 hover:text-white disabled:opacity-50 transition-colors text-xs shrink-0"
+                            >
+                                등록
+                            </button>
+                        </form>
+                    </div>
+                )}
             </div>
           ))
         ) : (
