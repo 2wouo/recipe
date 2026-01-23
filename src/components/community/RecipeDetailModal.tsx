@@ -1,0 +1,88 @@
+'use client';
+
+import { CommunityRecipe } from '@/types';
+import { useRecipeStore } from '@/store/useRecipeStore';
+import { BookOpen, X, ChefHat, User, Clock, Heart } from 'lucide-react';
+import { format } from 'date-fns';
+import CommentSection from './CommentSection';
+
+interface RecipeDetailModalProps {
+  recipe: CommunityRecipe;
+  onClose: () => void;
+}
+
+export default function RecipeDetailModal({ recipe, onClose }: RecipeDetailModalProps) {
+  const { importRecipe } = useRecipeStore();
+
+  const handleImport = async () => {
+    await importRecipe(recipe);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 px-4 backdrop-blur-md overflow-y-auto pt-10 pb-10">
+      <div className="w-full max-w-2xl rounded-sm border border-zinc-800 bg-zinc-950 p-8 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300 relative my-auto">
+        <button onClick={onClose} className="absolute right-6 top-6 text-zinc-500 hover:text-white">
+          <X size={28} />
+        </button>
+
+        <div className="mb-8">
+            <div className="flex items-center gap-2 text-blue-500 text-xs font-bold uppercase tracking-widest mb-2">
+                <ChefHat size={14} />
+                Community Recipe
+            </div>
+            <h2 className="text-3xl font-black text-white leading-tight">{recipe.title}</h2>
+            <div className="mt-4 flex items-center gap-4 text-sm text-zinc-500">
+                <span className="flex items-center gap-1.5"><User size={14}/>{recipe.author_name}</span>
+                <span className="flex items-center gap-1.5"><Clock size={14}/>{format(new Date(recipe.created_at), 'yyyy.MM.dd')}</span>
+            </div>
+        </div>
+
+        <div className="space-y-8">
+            {recipe.description && (
+                <div className="p-4 bg-zinc-900/50 rounded-sm border-l-4 border-blue-600 italic text-zinc-300">
+                    "{recipe.description}"
+                </div>
+            )}
+
+            <div className="grid gap-8 md:grid-cols-2">
+                <div>
+                    <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4 border-b border-zinc-800 pb-2">재료</h4>
+                    <ul className="space-y-2">
+                        {recipe.ingredients.map((ing, idx) => (
+                            <li key={idx} className="flex justify-between text-sm py-1 border-b border-zinc-900/50">
+                                <span className="text-zinc-200">{ing.name}</span>
+                                <span className="text-zinc-500">{ing.amount}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+                <div>
+                    <h4 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4 border-b border-zinc-800 pb-2">조리 순서</h4>
+                    <div className="space-y-4">
+                        {recipe.steps.map((step, idx) => (
+                            <div key={idx} className="flex gap-3">
+                                <span className="h-5 w-5 rounded-full bg-blue-600/20 text-blue-500 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">{idx+1}</span>
+                                <p className="text-sm text-zinc-300 leading-relaxed">{step}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div className="mt-12 flex gap-4">
+            <button 
+                onClick={handleImport}
+                className="flex-1 h-14 rounded-sm bg-blue-600 text-white font-black hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-xl shadow-blue-900/20"
+            >
+                <BookOpen size={20} />
+                내 보관함에 담기
+            </button>
+        </div>
+
+        <CommentSection recipeId={recipe.id} />
+      </div>
+    </div>
+  );
+}
