@@ -147,7 +147,7 @@ export default function PublishModal({ recipe, version, communityRecipeId, isOpe
             </div>
             <div className="grid gap-2">
               {ingredients.map((ing, idx) => (
-                <div key={idx} className="flex gap-3 items-start">
+                <div key={idx} className="flex gap-1 items-start">
                   <button 
                     type="button" 
                     onClick={() => updateIngredient(idx, 'isRequired', !ing.isRequired)} 
@@ -156,12 +156,14 @@ export default function PublishModal({ recipe, version, communityRecipeId, isOpe
                   >
                     <Asterisk size={16} />
                   </button>
-                  <input 
-                    placeholder="재료명"
-                    className="flex-[2] h-10 rounded-sm border border-zinc-800 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-blue-500"
-                    value={ing.name}
-                    onChange={e => updateIngredient(idx, 'name', e.target.value)}
-                  />
+                  <div className="flex-[2] ml-2">
+                    <input 
+                        placeholder="재료명"
+                        className="w-full h-10 rounded-sm border border-zinc-800 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-blue-500"
+                        value={ing.name}
+                        onChange={e => updateIngredient(idx, 'name', e.target.value)}
+                    />
+                  </div>
                   <input 
                     placeholder="양"
                     className="flex-1 h-10 rounded-sm border border-zinc-800 bg-zinc-900 px-3 text-sm text-white outline-none focus:border-blue-500"

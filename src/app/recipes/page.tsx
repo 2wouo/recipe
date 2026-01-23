@@ -449,7 +449,7 @@ function RecipesContent() {
                   
                   <div className="space-y-2">
                     {newVersion.ingredients.map((ing, idx) => (
-                      <div key={idx} className="flex gap-3 items-start group">
+                      <div key={idx} className="flex gap-1 items-start group">
                          <button 
                             type="button" 
                             onClick={() => updateIngredient(idx, 'isRequired', !ing.isRequired)} 
@@ -458,7 +458,7 @@ function RecipesContent() {
                          >
                             <Asterisk size={16} />
                          </button>
-                         <div className="flex-[3]">
+                         <div className="flex-[3] ml-2">
                             <Autocomplete 
                               options={products.map(p => p.name)}
                               value={ing.name}
