@@ -1,31 +1,45 @@
 import { create } from 'zustand';
 import { Product } from '@/types';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/client';
 
 interface ProductState {
   products: Product[];
   fetchProducts: () => Promise<void>;
   addProduct: (product: Product) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
-  registerBarcode: (productId: string, barcode: string) => Promise<void>;
+  searchProduct: (query: string) => Product[];
 }
 
 export const useProductStore = create<ProductState>((set, get) => ({
   products: [],
-
+  
   fetchProducts: async () => {
-    const { data, error } = await supabase.from('products').select('*');
+    const supabase = createClient();
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('name', { ascending: true });
+
     if (error) {
-        console.error('Error fetching products:', error);
-        return;
+      console.error('Error fetching products:', error);
+      return;
     }
-    set({ products: data || [] });
+
+    const mappedProducts: Product[] = (data || []).map((row: any) => ({
+      id: row.id,
+      name: row.name,
+      category: row.category,
+      barcodes: row.barcodes || []
+    }));
+
+    set({ products: mappedProducts });
   },
 
   addProduct: async (product) => {
+    const supabase = createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-        alert('로그인이 필요합니다.');
+        alert('로그인이 필요합니다. 다시 로그인해주세요.');
         return;
     }
 
@@ -47,39 +61,27 @@ export const useProductStore = create<ProductState>((set, get) => ({
   },
 
   deleteProduct: async (id) => {
+    const supabase = createClient();
     const { error } = await supabase.from('products').delete().eq('id', id);
+    
     if (error) {
         console.error('Error deleting product:', error);
-        return;
-    }
-    set((state) => ({
-      products: state.products.filter((p) => p.id !== id),
-    }));
-  },
-
-  registerBarcode: async (productId, barcode) => {
-    const product = get().products.find(p => p.id === productId);
-    if (!product) return;
-
-    const currentBarcodes = product.barcodes || [];
-    if (currentBarcodes.includes(barcode)) return;
-
-    const newBarcodes = [...currentBarcodes, barcode];
-
-    const { error } = await supabase.from('products').update({
-        barcodes: newBarcodes
-    }).eq('id', productId);
-
-    if (error) {
-        console.error('Error registering barcode:', error);
+        alert('삭제 실패: ' + error.message);
         return;
     }
 
     set((state) => ({
-      products: state.products.map(p => {
-        if (p.id !== productId) return p;
-        return { ...p, barcodes: newBarcodes };
-      })
+        products: state.products.filter((p) => p.id !== id),
     }));
   },
+
+  searchProduct: (query) => {
+    const { products } = get();
+    if (!query) return [];
+    const lowerQuery = query.toLowerCase();
+    return products.filter(p => 
+      p.name.toLowerCase().includes(lowerQuery) || 
+      p.barcodes?.some(b => b.includes(lowerQuery))
+    );
+  }
 }));
