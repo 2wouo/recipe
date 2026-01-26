@@ -12,6 +12,7 @@ import QuickProductAddModal from '@/components/products/QuickProductAddModal';
 import PublishModal from '@/components/community/PublishModal';
 import VersionSelectModal from '@/components/community/VersionSelectModal';
 import Autocomplete from '@/components/ui/Autocomplete';
+import { SortableList } from '@/components/ui/SortableList';
 
 function RecipesContent() {
   const { recipes, addRecipe, addVersion, updateRecipe, updateVersion, setPrimaryVersion, deleteRecipe, deleteVersion, fetchRecipes } = useRecipeStore();
@@ -85,6 +86,10 @@ function RecipesContent() {
     steps: ['']
   });
 
+  // Local state for DnD (editing)
+  const [editingIngredients, setEditingIngredients] = useState<{ id: string; name: string; amount: string; isRequired: boolean }[]>([]);
+  const [editingSteps, setEditingSteps] = useState<{ id: string; value: string }[]>([]);
+
   const handleOpenAddVersion = () => {
     if (selectedRecipe && selectedRecipe.versions.length > 0) {
       const latest = selectedRecipe.versions[selectedRecipe.versions.length - 1];
@@ -93,17 +98,21 @@ function RecipesContent() {
         version: nextVersionNum,
         notes: '',
         memo: latest.memo || '',
-        ingredients: latest.ingredients.map(ing => ({ ...ing, isRequired: !!ing.isRequired })), 
-        steps: [...latest.steps]
+        ingredients: [], 
+        steps: []
       });
+      setEditingIngredients(latest.ingredients.map(ing => ({ ...ing, isRequired: !!ing.isRequired, id: crypto.randomUUID() })));
+      setEditingSteps(latest.steps.map(step => ({ value: step, id: crypto.randomUUID() })));
     } else {
       setNewVersion({
         version: '1.0',
         notes: '',
         memo: '',
-        ingredients: [{ name: '', amount: '', isRequired: false }],
-        steps: ['']
+        ingredients: [],
+        steps: []
       });
+      setEditingIngredients([{ name: '', amount: '', isRequired: false, id: crypto.randomUUID() }]);
+      setEditingSteps([{ value: '', id: crypto.randomUUID() }]);
     }
     setIsAddingVersion(true);
     setEditingVersionIndex(null);
@@ -150,8 +159,15 @@ function RecipesContent() {
   const handleSaveVersion = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRecipeId || !newVersion.version) return;
-    const cleanedIngredients = newVersion.ingredients.filter(i => i.name.trim() !== '');
-    const cleanedSteps = newVersion.steps.filter(s => s.trim() !== '');
+    
+    const cleanedIngredients = editingIngredients
+        .filter(i => i.name.trim() !== '')
+        .map(({ id, ...rest }) => rest);
+        
+    const cleanedSteps = editingSteps
+        .filter(s => s.value.trim() !== '')
+        .map(s => s.value);
+
     const versionData: RecipeVersion = {
       ...newVersion,
       ingredients: cleanedIngredients,
@@ -174,9 +190,11 @@ function RecipesContent() {
       version: versionToEdit.version,
       notes: versionToEdit.notes,
       memo: versionToEdit.memo || '',
-      ingredients: versionToEdit.ingredients.map(ing => ({ ...ing, isRequired: !!ing.isRequired })),
-      steps: [...versionToEdit.steps]
+      ingredients: [],
+      steps: []
     });
+    setEditingIngredients(versionToEdit.ingredients.map(ing => ({ ...ing, isRequired: !!ing.isRequired, id: crypto.randomUUID() })));
+    setEditingSteps(versionToEdit.steps.map(step => ({ value: step, id: crypto.randomUUID() })));
     setEditingVersionIndex(index);
     setIsAddingVersion(true);
   };
@@ -206,31 +224,39 @@ function RecipesContent() {
   };
 
   const updateIngredient = (index: number, field: keyof Ingredient, value: any) => {
-    const updated = [...newVersion.ingredients];
+    let updated = [...editingIngredients];
     updated[index] = { ...updated[index], [field]: value };
-    setNewVersion({ ...newVersion, ingredients: updated });
+    
+    if (field === 'isRequired') {
+        updated.sort((a, b) => {
+            if (a.isRequired === b.isRequired) return 0;
+            return a.isRequired ? -1 : 1;
+        });
+    }
+    
+    setEditingIngredients(updated);
   };
 
   const addIngredientRow = () => {
-    setNewVersion({ ...newVersion, ingredients: [...newVersion.ingredients, { name: '', amount: '', isRequired: false }] });
+    setEditingIngredients([...editingIngredients, { name: '', amount: '', isRequired: false, id: crypto.randomUUID() }]);
   };
 
   const removeIngredientRow = (index: number) => {
-    setNewVersion({ ...newVersion, ingredients: newVersion.ingredients.filter((_, i) => i !== index) });
+    setEditingIngredients(editingIngredients.filter((_, i) => i !== index));
   };
 
   const updateStep = (index: number, value: string) => {
-    const updated = [...newVersion.steps];
-    updated[index] = value;
-    setNewVersion({ ...newVersion, steps: updated });
+    const updated = [...editingSteps];
+    updated[index] = { ...updated[index], value };
+    setEditingSteps(updated);
   };
 
   const addStepRow = () => {
-    setNewVersion({ ...newVersion, steps: [...newVersion.steps, ''] });
+    setEditingSteps([...editingSteps, { value: '', id: crypto.randomUUID() }]);
   };
 
   const removeStepRow = (index: number) => {
-    setNewVersion({ ...newVersion, steps: newVersion.steps.filter((_, i) => i !== index) });
+    setEditingSteps(editingSteps.filter((_, i) => i !== index));
   };
 
   const checkStock = (ingredientName: string) => {
@@ -450,9 +476,12 @@ function RecipesContent() {
                       </button>
                   </div>
                   
-                  <div className="space-y-2">
-                    {newVersion.ingredients.map((ing, idx) => (
-                      <div key={idx} className="flex gap-1 items-start group">
+                  <SortableList
+                    items={editingIngredients}
+                    onReorder={setEditingIngredients}
+                    keyExtractor={(item) => item.id}
+                    renderItem={(ing, idx) => (
+                      <div className="flex gap-1 items-start w-full">
                          <button 
                             type="button" 
                             onClick={() => updateIngredient(idx, 'isRequired', !ing.isRequired)} 
@@ -478,14 +507,14 @@ function RecipesContent() {
                          <button 
                             type="button" 
                             onClick={() => removeIngredientRow(idx)} 
-                            className="mt-2 text-zinc-600 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                            className="mt-2 text-zinc-600 hover:text-red-500 p-1 opacity-50 hover:opacity-100 transition-opacity shrink-0"
                             tabIndex={-1}
                          >
                             <Trash2 size={14} />
                          </button>
                       </div>
-                    ))}
-                  </div>
+                    )}
+                  />
                 </div>
 
                 <div className="space-y-4">
@@ -495,30 +524,33 @@ function RecipesContent() {
                             <Plus size={12} /> 단계 추가
                         </button>
                     </div>
-                    <div className="space-y-3">
-                        {newVersion.steps.map((step, idx) => (
-                            <div key={idx} className="flex gap-3 group">
+                    <SortableList
+                        items={editingSteps}
+                        onReorder={setEditingSteps}
+                        keyExtractor={(item) => item.id}
+                        renderItem={(step, idx) => (
+                            <div className="flex gap-3 w-full">
                                 <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-[10px] font-bold text-zinc-400 mt-1.5">
                                     {idx+1}
                                 </div>
                                 <textarea 
                                     rows={2} 
                                     className="flex-1 rounded-md border border-zinc-800 bg-zinc-900/50 px-3 py-2.5 text-sm text-zinc-200 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/50 transition-all resize-none placeholder:text-zinc-600" 
-                                    value={step} 
+                                    value={step.value} 
                                     onChange={e => updateStep(idx, e.target.value)} 
                                     placeholder="조리 과정을 입력하세요."
                                 />
                                 <button 
                                     type="button" 
                                     onClick={() => removeStepRow(idx)} 
-                                    className="mt-3 text-zinc-600 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    className="mt-3 text-zinc-600 hover:text-red-500 p-1 opacity-50 hover:opacity-100 transition-opacity"
                                     tabIndex={-1}
                                 >
                                     <Trash2 size={14} />
                                 </button>
                             </div>
-                        ))}
-                    </div>
+                        )}
+                    />
                 </div>
               </form>
             ) : (
