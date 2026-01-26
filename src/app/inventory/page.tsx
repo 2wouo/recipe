@@ -506,15 +506,12 @@ export default function InventoryPage() {
 
                 {/* Misc Items Divider */}
                 {miscItems.length > 0 && (
-                    <div className="relative pt-4">
-                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                            <div className="w-full border-t border-zinc-800"></div>
-                        </div>
-                        <div className="relative flex justify-center">
-                            <span className="bg-black px-3 text-xs font-bold text-zinc-500 uppercase tracking-widest">
-                                양념/소스 & 음료
-                            </span>
-                        </div>
+                    <div className="relative flex items-center py-8">
+                        <div className="flex-grow border-t border-zinc-800/50"></div>
+                        <span className="flex-shrink-0 mx-4 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">
+                            양념/소스 & 음료
+                        </span>
+                        <div className="flex-grow border-t border-zinc-800/50"></div>
                     </div>
                 )}
 
