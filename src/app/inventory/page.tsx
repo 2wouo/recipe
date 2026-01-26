@@ -214,14 +214,14 @@ export default function InventoryPage() {
   const renderInventoryItem = (item: InventoryItem) => (
     <div key={item.id} className="group relative rounded-sm border border-zinc-800 bg-zinc-900/30 p-4 transition-colors hover:bg-zinc-900/60">
         <div className="mb-2 flex items-start justify-between">
-            <div>
-            <h4 className="font-bold">{item.name}</h4>
-            <p className="text-xs text-zinc-400 mt-0.5 min-h-[1.2em]">
-                {item.detail?.trim() || '\u00A0'}
-            </p>
-            <p className="text-xs text-zinc-500 mt-1">{item.quantity || '-'}</p>
+            <div className="flex-1 min-w-0 pr-2">
+                <h4 className="font-bold truncate">{item.name}</h4>
+                <p className="text-xs text-zinc-400 mt-0.5 min-h-[1.2em] truncate">
+                    {item.detail?.trim() || '\u00A0'}
+                </p>
+                <p className="text-xs text-zinc-500 mt-1">{item.quantity || '-'}</p>
             </div>
-            <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <div className="flex items-center gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
                 <button 
                     onClick={() => handleEditClick(item)}
                     className="rounded-sm p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-blue-500"
