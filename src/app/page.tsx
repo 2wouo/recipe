@@ -121,7 +121,7 @@ export default function Home() {
                 {recommendedOnes.length > 0 ? (
                     <div className="grid gap-4 md:grid-cols-2">
                         {recommendedOnes.map(rec => (
-                            <div key={rec.recipe.id} className="relative overflow-hidden rounded-xl border border-blue-500/10 bg-zinc-900 p-6 shadow-xl group transition-all hover:border-blue-500/30">
+                            <div key={rec.recipe.id} className="relative overflow-hidden rounded-xl border border-blue-500/10 bg-zinc-900 p-6 shadow-xl group transition-all hover:border-blue-500/30 min-h-[280px] flex flex-col">
                                 <div className="relative z-10 flex flex-col h-full">
                                     <div className="flex justify-between items-start mb-4">
                                         <span className="px-2 py-0.5 rounded-sm bg-blue-600/20 text-blue-400 text-[9px] font-black uppercase tracking-widest border border-blue-500/20">
@@ -163,7 +163,7 @@ export default function Home() {
 
                                     <Link
                                         href={`/recipes?id=${rec.recipe.id}`}
-                                        className="flex items-center justify-between w-full h-10 px-4 rounded-md bg-blue-600/10 text-blue-500 font-bold text-xs hover:bg-blue-600 hover:text-white transition-all group/btn"
+                                        className="flex items-center justify-between w-full h-10 px-4 rounded-md bg-blue-600/10 text-blue-500 font-bold text-xs hover:bg-blue-600 hover:text-white transition-all group/btn mt-auto"
                                     >
                                         상세 레시피 보기
                                         <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
@@ -173,7 +173,7 @@ export default function Home() {
                         ))}
                     </div>
                 ) : (
-                    <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-900/20 p-12 text-center animate-in fade-in zoom-in duration-300">
+                    <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-900/20 p-6 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-300 min-h-[280px]">
                         <Info className="mx-auto text-zinc-700 mb-4" size={40} />
                         <p className="text-zinc-400 font-medium mb-1">
                             {selectedIngredient ? `'${selectedIngredient}'(으)로 만들 수 있는 레시피가 없습니다.` : '아직 등록된 레시피가 부족합니다.'}
@@ -183,10 +183,10 @@ export default function Home() {
                         </p>
                         
                         {selectedIngredient ? (
-                            <div className="mt-6 flex flex-col items-center gap-3">
+                            <div className="mt-6 flex flex-col items-center gap-3 w-full max-w-[200px]">
                                 <button 
                                     onClick={() => setSelectedIngredient(null)}
-                                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md transition-all shadow-lg shadow-blue-900/20 hover:scale-105 active:scale-95"
+                                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md transition-all shadow-lg shadow-blue-900/20 hover:scale-105 active:scale-95"
                                 >
                                     다른 추천 레시피 보기
                                 </button>
