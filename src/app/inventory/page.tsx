@@ -53,6 +53,20 @@ export default function InventoryPage() {
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Group & Sort for Display
+  const isMiscCategory = (itemName: string) => {
+      const product = products.find(p => p.name === itemName);
+      if (!product) return false; 
+      return ['양념/소스', '음료/간식'].includes(product.category);
+  };
+
+  const sortByExpiry = (a: InventoryItem, b: InventoryItem) => {
+      return new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime();
+  };
+
+  const mainItems = filteredItems.filter(item => !isMiscCategory(item.name)).sort(sortByExpiry);
+  const miscItems = filteredItems.filter(item => isMiscCategory(item.name)).sort(sortByExpiry);
+
   const resetForm = () => {
     setFormData({
       name: '',
@@ -196,6 +210,49 @@ export default function InventoryPage() {
     if (diff < 0) return <span className="text-red-500 font-bold">{Math.abs(diff)}일 지남</span>;
     return <span className={diff <= 3 ? "text-orange-500 font-bold" : "text-zinc-400"}>D-{diff}</span>;
   };
+
+  const renderInventoryItem = (item: InventoryItem) => (
+    <div key={item.id} className="group relative rounded-sm border border-zinc-800 bg-zinc-900/30 p-4 transition-colors hover:bg-zinc-900/60">
+        <div className="mb-2 flex items-start justify-between">
+            <div>
+            <h4 className="font-bold">{item.name}</h4>
+            <p className="text-xs text-zinc-400 mt-0.5 min-h-[1.2em]">
+                {item.detail?.trim() || '\u00A0'}
+            </p>
+            <p className="text-xs text-zinc-500 mt-1">{item.quantity || '-'}</p>
+            </div>
+            <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <button 
+                    onClick={() => handleEditClick(item)}
+                    className="rounded-sm p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-blue-500"
+                    title="수정"
+                >
+                    <Pencil size={14} />
+                </button>
+                <button 
+                    onClick={() => deleteItem(item.id)}
+                    className="rounded-sm p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-red-500"
+                    title="삭제"
+                >
+                    <Trash2 size={14} />
+                </button>
+            </div>
+        </div>
+        <div className="mt-4 flex items-center justify-between border-t border-zinc-800 pt-3">
+            <div className="flex items-center gap-1 text-xs text-zinc-500">
+            <span>소비기한:</span>
+            <span>{item.expiryDate}</span>
+            </div>
+            <div className="text-xs">
+            {getDDay(item.expiryDate)}
+            </div>
+        </div>
+        <div className="mt-1 flex items-center justify-between text-[10px] text-zinc-600">
+            <span>등록일: {format(new Date(item.registeredAt), 'yyyy-MM-dd')}</span>
+            {item.barcode && <Barcode size={12} className="opacity-50" />}
+        </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -439,54 +496,39 @@ export default function InventoryPage() {
             )}
 
             {/* Item List */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {filteredItems.length > 0 ? (
-                filteredItems.map((item) => (
-                    <div key={item.id} className="group relative rounded-sm border border-zinc-800 bg-zinc-900/30 p-4 transition-colors hover:bg-zinc-900/60">
-                    <div className="mb-2 flex items-start justify-between">
-                        <div>
-                        <h4 className="font-bold">{item.name}</h4>
-                        <p className="text-xs text-zinc-400 mt-0.5 min-h-[1.2em]">
-                            {item.detail?.trim() || '\u00A0'}
-                        </p>
-                        <p className="text-xs text-zinc-500 mt-1">{item.quantity || '-'}</p>
+            <div className="space-y-12 pb-20">
+                {/* Main Items */}
+                {mainItems.length > 0 && (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                        {mainItems.map(renderInventoryItem)}
+                    </div>
+                )}
+
+                {/* Misc Items Divider */}
+                {miscItems.length > 0 && (
+                    <div className="relative pt-4">
+                        <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                            <div className="w-full border-t border-zinc-800"></div>
                         </div>
-                        <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                            <button 
-                                onClick={() => handleEditClick(item)}
-                                className="rounded-sm p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-blue-500"
-                                title="수정"
-                            >
-                                <Pencil size={14} />
-                            </button>
-                            <button 
-                                onClick={() => deleteItem(item.id)}
-                                className="rounded-sm p-1.5 text-zinc-500 hover:bg-zinc-800 hover:text-red-500"
-                                title="삭제"
-                            >
-                                <Trash2 size={14} />
-                            </button>
+                        <div className="relative flex justify-center">
+                            <span className="bg-black px-3 text-xs font-bold text-zinc-500 uppercase tracking-widest">
+                                양념/소스 & 음료
+                            </span>
                         </div>
                     </div>
-                    <div className="mt-4 flex items-center justify-between border-t border-zinc-800 pt-3">
-                        <div className="flex items-center gap-1 text-xs text-zinc-500">
-                        <span>소비기한:</span>
-                        <span>{item.expiryDate}</span>
-                        </div>
-                        <div className="text-xs">
-                        {getDDay(item.expiryDate)}
-                        </div>
+                )}
+
+                {/* Misc Items */}
+                {miscItems.length > 0 && (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 opacity-80 hover:opacity-100 transition-opacity">
+                        {miscItems.map(renderInventoryItem)}
                     </div>
-                    <div className="mt-1 flex items-center justify-between text-[10px] text-zinc-600">
-                        <span>등록일: {format(new Date(item.registeredAt), 'yyyy-MM-dd')}</span>
-                        {item.barcode && <Barcode size={12} className="opacity-50" />}
+                )}
+                
+                {mainItems.length === 0 && miscItems.length === 0 && (
+                    <div className="py-20 text-center">
+                        <p className="text-zinc-500">이곳은 비어있습니다. 새로운 식재료를 추가해보세요.</p>
                     </div>
-                    </div>
-                ))
-                ) : (
-                <div className="col-span-full py-20 text-center">
-                    <p className="text-zinc-500">이곳은 비어있습니다. 새로운 식재료를 추가해보세요.</p>
-                </div>
                 )}
             </div>
 
