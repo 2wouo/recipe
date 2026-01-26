@@ -23,7 +23,7 @@ export default function Home() {
 
     const today = new Date();
 
-    // 1. 유통기한 관리 데이터 (지났거나 7일 이내인 것)
+    // 1. 소비기한 관리 데이터 (지났거나 7일 이내인 것)
     const expiringItems = items
         .filter((item) => {
             const daysLeft = differenceInDays(parseISO(item.expiryDate), today);
@@ -230,12 +230,12 @@ export default function Home() {
                 )}
             </section>
 
-            {/* 2. 유통기한 관리 */}
+            {/* 2. 소비기한 관리 */}
             <section>
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
                         <AlertCircle className="text-blue-500" size={20} />
-                        <h2 className="text-xl font-bold tracking-tight">유통기한 현황</h2>
+                        <h2 className="text-xl font-bold tracking-tight">소비기한 현황</h2>
                     </div>
                     <Link href="/inventory" className="text-xs text-zinc-500 hover:text-blue-500 font-bold transition-colors">
                         전체보기
