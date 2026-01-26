@@ -42,6 +42,7 @@ export default function Home() {
             let score = 0;
             const matchedIngredients: string[] = [];
             const missingIngredients: string[] = [];
+            let hasExpiring = false;
 
             currentVer.ingredients.forEach(ing => {
                 const stockItem = items.find(item => item.name.trim().toLowerCase() === ing.name.trim().toLowerCase());
@@ -55,7 +56,10 @@ export default function Home() {
                     score += 1;
                     matchedIngredients.push(ing.name);
                     const daysLeft = differenceInDays(parseISO(stockItem.expiryDate), today);
-                    if (daysLeft <= 3) score += 20;
+                    if (daysLeft <= 3) {
+                        score += 20;
+                        hasExpiring = true;
+                    }
                     else if (daysLeft <= 7) score += 10;
                 } else {
                     missingIngredients.push(ing.name);
@@ -68,7 +72,8 @@ export default function Home() {
                 matchedCount: matchedIngredients.length,
                 totalCount: currentVer.ingredients.length,
                 matchedIngredients,
-                missingIngredients
+                missingIngredients,
+                hasExpiring
             };
         });
 
@@ -124,9 +129,24 @@ export default function Home() {
                             <div key={rec.recipe.id} className="relative overflow-hidden rounded-xl border border-blue-500/10 bg-zinc-900 p-6 shadow-xl group transition-all hover:border-blue-500/30 min-h-[280px] flex flex-col">
                                 <div className="relative z-10 flex flex-col h-full">
                                     <div className="flex justify-between items-start mb-4">
-                                        <span className="px-2 py-0.5 rounded-sm bg-blue-600/20 text-blue-400 text-[9px] font-black uppercase tracking-widest border border-blue-500/20">
-                                            Best Match
-                                        </span>
+                                        {(() => {
+                                            let badgeText = 'Recommended';
+                                            let badgeClass = 'bg-green-600/10 text-green-500 border-green-500/20';
+                                            
+                                            if (rec.hasExpiring) {
+                                                badgeText = 'Expiring Soon';
+                                                badgeClass = 'bg-amber-500/10 text-amber-500 border-amber-500/20';
+                                            } else if ((rec.matchedCount / (rec.totalCount || 1)) >= 0.7) {
+                                                badgeText = 'High Match';
+                                                badgeClass = 'bg-blue-600/10 text-blue-500 border-blue-500/20';
+                                            }
+                                            
+                                            return (
+                                                <span className={`px-2 py-0.5 rounded-sm text-[9px] font-black uppercase tracking-widest border ${badgeClass}`}>
+                                                    {badgeText}
+                                                </span>
+                                            );
+                                        })()}
                                         <div className="text-[10px] font-mono text-zinc-600">
                                             {Math.round(((rec.matchedCount || 0) / (rec.totalCount || 1)) * 100)}% Ready
                                         </div>
@@ -211,7 +231,6 @@ export default function Home() {
                     <div className="flex items-center gap-2">
                         <AlertCircle className="text-blue-500" size={20} />
                         <h2 className="text-xl font-bold tracking-tight">유통기한 및 재고 현황</h2>
-                        <span className="text-xs text-zinc-500 font-normal">품목을 클릭하여 관련 레시피를 확인하세요.</span>
                     </div>
                     <Link href="/inventory" className="text-xs text-zinc-500 hover:text-blue-500 font-bold transition-colors">
                         전체보기
