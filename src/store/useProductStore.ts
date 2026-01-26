@@ -12,6 +12,7 @@ interface ProductState {
   resetToDefaultProducts: () => Promise<void>;
   deleteDefaultProducts: () => Promise<void>;
   deleteAllMyProducts: () => Promise<void>;
+  addBarcodeToProduct: (productId: string, newBarcode: string) => Promise<void>;
   searchProduct: (query: string) => Product[];
 }
 
@@ -170,6 +171,35 @@ export const useProductStore = create<ProductState>((set, get) => ({
 
     set({ products: [] });
     alert('모든 품목이 삭제되었습니다.');
+  },
+
+  addBarcodeToProduct: async (productId, newBarcode) => {
+    const supabase = createClient();
+    const { products } = get();
+    const targetProduct = products.find(p => p.id === productId);
+    
+    if (!targetProduct) return;
+    
+    // 이미 있는 바코드면 패스
+    if (targetProduct.barcodes?.includes(newBarcode)) return;
+
+    const updatedBarcodes = [...(targetProduct.barcodes || []), newBarcode];
+
+    const { error } = await supabase
+      .from('products')
+      .update({ barcodes: updatedBarcodes })
+      .eq('id', productId);
+
+    if (error) {
+      console.error('Error adding barcode to product:', error);
+      return;
+    }
+
+    set({
+      products: products.map(p => 
+        p.id === productId ? { ...p, barcodes: updatedBarcodes } : p
+      )
+    });
   },
 
   searchProduct: (query) => {

@@ -15,7 +15,7 @@ import InfoTooltip from '@/components/ui/InfoTooltip';
 
 export default function InventoryPage() {
   const { items, addItem, updateItem, deleteItem, fetchItems } = useInventoryStore();
-  const { products, fetchProducts, addProduct } = useProductStore();
+  const { products, fetchProducts, addProduct, addBarcodeToProduct } = useProductStore();
   
   const [viewMode, setViewMode] = useState<'INVENTORY' | 'MASTER'>('INVENTORY');
   const [activeTab, setActiveTab] = useState<StorageType>('FRIDGE');
@@ -138,6 +138,17 @@ export default function InventoryPage() {
         barcode: formData.barcode
       });
     }
+
+    // DB 학습: 선택된 표준 이름에 바코드 연동
+    if (formData.barcode && formData.name) {
+        const matchedMaster = products.find(p => p.name === formData.name);
+        if (matchedMaster) {
+            if (!matchedMaster.barcodes?.includes(formData.barcode)) {
+                addBarcodeToProduct(matchedMaster.id, formData.barcode);
+            }
+        }
+    }
+
     resetForm();
   };
 
@@ -163,6 +174,21 @@ export default function InventoryPage() {
 
   const handleScanSuccess = async (decodedText: string) => {
     setIsScannerOpen(false);
+
+    // 1. 내부 DB 우선 검색
+    const matchedProduct = products.find(p => p.barcodes?.includes(decodedText));
+    if (matchedProduct) {
+        setFormData(prev => ({
+            ...prev,
+            name: matchedProduct.name,
+            detail: matchedProduct.name,
+            barcode: decodedText
+        }));
+        if (!isFormOpen) setIsFormOpen(true);
+        return;
+    }
+
+    // 2. 외부 API 검색
     const externalName = await fetchProductFromExternal(decodedText);
     
     if (externalName) {
@@ -172,33 +198,16 @@ export default function InventoryPage() {
             detail: externalName,
             barcode: decodedText
         }));
-
-        const existsInMaster = products.some(p => p.name === externalName || p.barcodes?.includes(decodedText));
-        if (!existsInMaster) {
-            addProduct({
-                id: crypto.randomUUID(),
-                name: externalName,
-                category: '기타',
-                barcodes: [decodedText]
-            });
-        }
+        alert(`스캔 성공: ${externalName}\n\n표준 품목명과 다를 경우, '표준 품목명'을 검색하여 선택해주세요. 저장 시 바코드가 해당 품목에 자동으로 연결됩니다.`);
     } else {
-        const matchedProduct = products.find(p => p.barcodes?.includes(decodedText));
-        if (matchedProduct) {
-            setFormData(prev => ({
-                ...prev,
-                name: matchedProduct.name,
-                detail: matchedProduct.name,
-                barcode: decodedText
-            }));
-        } else {
-            setFormData(prev => ({
-                ...prev,
-                barcode: decodedText
-            }));
-            alert(`외부 데이터베이스에도 없는 제품입니다 (${decodedText}).\n제품명을 직접 입력해 주시면 다음부터는 자동으로 인식합니다!`);
-        }
+        // 3. 완전히 새로운 바코드
+        setFormData(prev => ({
+            ...prev,
+            barcode: decodedText
+        }));
+        alert(`새로운 바코드입니다 (${decodedText}).\n제품명을 직접 입력해 주시면 다음부터는 자동으로 인식합니다!`);
     }
+
     if (!isFormOpen) {
         setIsFormOpen(true);
     }
