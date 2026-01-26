@@ -165,10 +165,34 @@ export default function Home() {
                         ))}
                     </div>
                 ) : (
-                    <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-900/20 p-12 text-center">
+                    <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-900/20 p-12 text-center animate-in fade-in zoom-in duration-300">
                         <Info className="mx-auto text-zinc-700 mb-4" size={40} />
-                        <p className="text-zinc-500 font-medium">추천할 레시피가 없습니다.</p>
-                        {selectedIngredient && <p className="text-zinc-600 text-xs mt-2">선택한 재료를 사용하는 레시피가 없어요.</p>}
+                        <p className="text-zinc-400 font-medium mb-1">
+                            {selectedIngredient ? `'${selectedIngredient}'(으)로 만들 수 있는 레시피가 없습니다.` : '아직 등록된 레시피가 부족합니다.'}
+                        </p>
+                        <p className="text-zinc-600 text-xs">
+                            {selectedIngredient ? '대신 다른 요리를 만들어보는 건 어떨까요?' : '나만의 레시피를 추가하여 목록을 채워보세요.'}
+                        </p>
+                        
+                        {selectedIngredient ? (
+                            <div className="mt-6 flex flex-col items-center gap-3">
+                                <button 
+                                    onClick={() => setSelectedIngredient(null)}
+                                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md transition-all shadow-lg shadow-blue-900/20 hover:scale-105 active:scale-95"
+                                >
+                                    다른 추천 레시피 보기
+                                </button>
+                                <Link href="/recipes" className="text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1">
+                                    <Plus size={10} />
+                                    새 레시피 등록하기
+                                </Link>
+                            </div>
+                        ) : (
+                            <Link href="/recipes" className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold rounded-md transition-all">
+                                <Plus size={14} />
+                                레시피 등록하기
+                            </Link>
+                        )}
                     </div>
                 )}
             </section>
