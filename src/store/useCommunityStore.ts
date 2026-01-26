@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { CommunityRecipe, Comment } from '@/types';
+import { CommunityRecipe, Comment, Ingredient } from '@/types';
 import { createClient } from '@/utils/supabase/client';
 import { useAuthStore } from '@/store/useAuthStore';
 
@@ -56,10 +56,7 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
         query = query.filter('recipe_likes.user_id', 'eq', user.id);
     }
 
-    if (searchQuery) {
-      query = query.or(`title.ilike.%${searchQuery}%,author_name.ilike.%${searchQuery}%`);
-    }
-
+    // JSON 컬럼(ingredients) 검색을 위해 DB 필터링 대신 메모리 필터링 사용
     const { data, error } = await query;
 
     if (error) {
@@ -68,22 +65,34 @@ export const useCommunityStore = create<CommunityState>((set, get) => ({
       return;
     }
 
+    let mappedRecipes = (data || []).map((row: any) => ({
+      id: row.id,
+      original_recipe_id: row.original_recipe_id,
+      title: row.title,
+      description: row.description,
+      ingredients: row.ingredients,
+      steps: row.steps,
+      author_id: row.author_id,
+      author_name: row.profiles?.username || row.author_name,
+      author_avatar_url: row.profiles?.avatar_url,
+      created_at: row.created_at,
+      likes_count: row.likes_count || 0,
+      views_count: row.views_count || 0,
+      is_liked: (row.recipe_likes || []).length > 0
+    }));
+
+    if (searchQuery) {
+      const lowerQuery = searchQuery.toLowerCase();
+      mappedRecipes = mappedRecipes.filter((r: CommunityRecipe) => {
+        const matchesTitle = r.title?.toLowerCase().includes(lowerQuery);
+        const matchesAuthor = r.author_name?.toLowerCase().includes(lowerQuery);
+        const matchesIngredients = r.ingredients?.some((i: Ingredient) => i.name.toLowerCase().includes(lowerQuery));
+        return matchesTitle || matchesAuthor || matchesIngredients;
+      });
+    }
+
     set({ 
-      communityRecipes: (data || []).map((row: any) => ({
-        id: row.id,
-        original_recipe_id: row.original_recipe_id,
-        title: row.title,
-        description: row.description,
-        ingredients: row.ingredients,
-        steps: row.steps,
-        author_id: row.author_id,
-        author_name: row.profiles?.username || row.author_name,
-        author_avatar_url: row.profiles?.avatar_url,
-        created_at: row.created_at,
-        likes_count: row.likes_count || 0,
-        views_count: row.views_count || 0,
-        is_liked: (row.recipe_likes || []).length > 0
-      })),
+      communityRecipes: mappedRecipes,
       loading: false 
     });
   },

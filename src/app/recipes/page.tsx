@@ -62,9 +62,12 @@ function RecipesContent() {
 
   const filteredRecipes = recipes.filter(recipe => {
     const query = searchQuery.toLowerCase();
-    const matchesSearch = recipe.title.toLowerCase().includes(query);
+    const matchesTitle = recipe.title.toLowerCase().includes(query);
+    const matchesIngredients = recipe.versions.some(v => 
+      v.ingredients.some(i => i.name.toLowerCase().includes(query))
+    );
     
-    if (!matchesSearch) return false;
+    if (!matchesTitle && !matchesIngredients) return false;
 
     if (filterType === 'mine') {
         return !recipe.source_author;
