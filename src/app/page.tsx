@@ -101,13 +101,18 @@ export default function Home() {
             setSelectedIngredient(null);
         } else {
             setSelectedIngredient(name);
+            // Scroll to recommendations
+            const element = document.getElementById('recipe-recommendations');
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
     };
 
     return (
         <div className="space-y-10 pb-10">
             {/* 1. 오늘의 추천 (Split 2 Cards) */}
-            <section>
+            <section id="recipe-recommendations" className="scroll-mt-24">
                 <div className="flex items-center gap-2 mb-4">
                     <ChefHat className="text-blue-500" size={20} />
                     <h2 className="text-xl font-bold tracking-tight">
@@ -230,7 +235,7 @@ export default function Home() {
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
                         <AlertCircle className="text-blue-500" size={20} />
-                        <h2 className="text-xl font-bold tracking-tight">유통기한 및 재고 현황</h2>
+                        <h2 className="text-xl font-bold tracking-tight">유통기한 현황</h2>
                     </div>
                     <Link href="/inventory" className="text-xs text-zinc-500 hover:text-blue-500 font-bold transition-colors">
                         전체보기
