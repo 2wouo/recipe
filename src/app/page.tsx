@@ -73,7 +73,15 @@ export default function Home() {
         });
 
         const candidates = scoredRecipes
-            .filter(r => r.score > 0)
+            .filter(r => {
+                // 선택된 재료가 있는 경우, 반드시 그 재료를 포함하는 레시피만 필터링
+                if (selectedIngredient) {
+                    return r.recipe.versions.find(v => v.version === r.recipe.currentVersion)
+                        ?.ingredients.some(ing => ing.name.trim().toLowerCase() === selectedIngredient.trim().toLowerCase());
+                }
+                // 선택된 재료가 없는 경우, 점수가 0보다 큰 모든 레시피
+                return r.score > 0;
+            })
             .sort((a, b) => b.score - a.score)
             .slice(0, 5);
 
