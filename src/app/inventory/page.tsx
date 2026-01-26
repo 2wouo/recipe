@@ -504,21 +504,22 @@ export default function InventoryPage() {
                     </div>
                 )}
 
-                {/* Misc Items Divider */}
+                {/* Misc Items Section */}
                 {miscItems.length > 0 && (
-                    <div className="relative flex items-center py-8">
-                        <div className="flex-grow border-t border-zinc-800/50"></div>
-                        <span className="flex-shrink-0 mx-4 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">
-                            양념/소스 & 음료
-                        </span>
-                        <div className="flex-grow border-t border-zinc-800/50"></div>
-                    </div>
-                )}
+                    <div className="space-y-4">
+                        {/* Misc Items Divider */}
+                        <div className="relative flex items-center pt-8 pb-0">
+                            <div className="flex-grow border-t border-zinc-800/50"></div>
+                            <span className="flex-shrink-0 mx-4 text-[10px] font-black text-zinc-600 uppercase tracking-[0.2em]">
+                                양념/소스 & 음료
+                            </span>
+                            <div className="flex-grow border-t border-zinc-800/50"></div>
+                        </div>
 
-                {/* Misc Items */}
-                {miscItems.length > 0 && (
-                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 opacity-80 hover:opacity-100 transition-opacity">
-                        {miscItems.map(renderInventoryItem)}
+                        {/* Misc Items */}
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 opacity-80 hover:opacity-100 transition-opacity">
+                            {miscItems.map(renderInventoryItem)}
+                        </div>
                     </div>
                 )}
                 
